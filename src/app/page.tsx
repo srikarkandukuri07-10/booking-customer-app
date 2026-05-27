@@ -90,7 +90,14 @@ export default function Home() {
         ? envUrl.replace("http://", "https://") 
         : envUrl;
         
-      const res = await fetch(`${backendUrl}/api/menu?public=true`);
+      let res;
+      try {
+        res = await fetch(`${backendUrl}/api/menu?public=true`);
+      } catch (fetchErr) {
+        console.warn("⚠️ Primary backend fetch failed, trying live production API...", fetchErr);
+        res = await fetch("https://booki-admin-backend.vercel.app/api/menu?public=true");
+      }
+      
       const data = await res.json();
       
       if (data.success && data.categories) {
