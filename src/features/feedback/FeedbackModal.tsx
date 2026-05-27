@@ -41,6 +41,9 @@ export default function FeedbackModal({
     setIsSubmitting(true);
     setErrorMsg(null);
 
+    const selectedItem = menuItems.find((item) => item.id === selectedItemId);
+    const itemName = selectedItem ? selectedItem.name : "";
+
     try {
       const envUrl = process.env.NEXT_PUBLIC_API_URL || "https://booki-admin-backend.vercel.app";
       const backendUrl = (envUrl.startsWith("http://localhost") || envUrl.startsWith("http://127.0.0.1")) 
@@ -56,6 +59,7 @@ export default function FeedbackModal({
           value: selectedRating,
           comment: comment.trim(),
           menuItemId: selectedItemId,
+          menuItemName: itemName, // Send item name for database lookup fallback!
         }),
       });
 
