@@ -180,7 +180,7 @@ export default function Home() {
           </span>
         </div>
 
-        {/* Selected Table Pill & Swap Button */}
+        {/* Selected Table Pill */}
         <div className="flex items-center gap-2">
           <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)] animate-pulse" />
@@ -188,14 +188,6 @@ export default function Home() {
               {selectedTable}
             </span>
           </div>
-
-          <button
-            onClick={() => setTable(null)}
-            className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors text-neutral-400 hover:text-neutral-200 cursor-pointer"
-            title="Change Table"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
         </div>
       </header>
 
