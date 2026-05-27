@@ -142,7 +142,7 @@ export default function Home() {
 
     const pollMenuInterval = setInterval(() => {
       fetchDynamicMenu();
-    }, 8000); // Poll every 8 seconds for fast menu availability sync on Vercel!
+    }, 2000); // Poll every 2 seconds for immediate menu availability sync!
 
     return () => clearInterval(pollMenuInterval);
   }, [mounted]);

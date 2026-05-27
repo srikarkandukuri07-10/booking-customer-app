@@ -61,7 +61,7 @@ export default function FoodCard({ item }: FoodCardProps) {
     <motion.div 
       layout
       className={`glass-card rounded-3xl overflow-hidden flex flex-col w-full relative transition-all duration-300 border border-white/[0.05] ${
-        !isAvailable ? "opacity-60 saturate-50" : ""
+        !isAvailable ? "opacity-50 grayscale" : ""
       }`}
     >
       {/* Visual Header / Image Container */}
