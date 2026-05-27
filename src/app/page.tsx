@@ -63,6 +63,11 @@ export default function Home() {
           ? `Table ${cleanedTable}` 
           : cleanedTable;
         setTable(formattedTable);
+        
+        // Clean/remove the query parameters from the address bar so that
+        // refreshing the page later will ask for the table number again!
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
       }
     }
 

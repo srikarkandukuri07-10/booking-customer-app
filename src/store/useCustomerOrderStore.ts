@@ -137,7 +137,6 @@ export const useCustomerOrderStore = create<CustomerOrderStore>()(
     {
       name: "restaurant-ordering-storage",
       partialize: (state) => ({
-        selectedTable: state.selectedTable,
         cart: state.cart,
         orders: state.orders
       })
