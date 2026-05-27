@@ -129,6 +129,17 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted]);
 
+  // 1c. Fast periodic background menu polling to catch availability updates
+  useEffect(() => {
+    if (!mounted) return;
+
+    const pollMenuInterval = setInterval(() => {
+      fetchDynamicMenu();
+    }, 8000); // Poll every 8 seconds for fast menu availability sync on Vercel!
+
+    return () => clearInterval(pollMenuInterval);
+  }, [mounted]);
+
   // 2a. Connect socket + bind status listener ONCE on mount only
   // Having `orders` in deps caused a new listener to be added every time an update arrived!
   useEffect(() => {
@@ -146,12 +157,19 @@ export default function Home() {
       }));
     };
 
+    const handleMenuUpdate = () => {
+      console.log("📡 Realtime menu update detected via Socket.IO, re-fetching...");
+      fetchDynamicMenu();
+    };
+
     socket.on("status-changed", handleStatusChange);
-    console.log("📡 Socket.IO: status-changed listener bound.");
+    socket.on("menu-updated", handleMenuUpdate);
+    console.log("📡 Socket.IO: status-changed & menu-updated listeners bound.");
 
     return () => {
       socket.off("status-changed", handleStatusChange);
-      console.log("📡 Socket.IO: status-changed listener removed.");
+      socket.off("menu-updated", handleMenuUpdate);
+      console.log("📡 Socket.IO: listeners removed.");
     };
   }, [mounted]); // ← only runs once when component mounts
 
