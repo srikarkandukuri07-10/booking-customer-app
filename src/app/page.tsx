@@ -16,9 +16,10 @@ export default function Home() {
   const [orders, setOrders] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("Starters");
 
+  const [menuItems, setMenuItems] = useState<any[]>(MENU_DATA);
   const setTable = useCustomerOrderStore((state) => state.setTable);
 
-  // 1. Hydration guard to safely load Zustand persisted state only on the client
+  // 1a. Hydration guard to safely load Zustand persisted state only on the client
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
@@ -48,6 +49,51 @@ export default function Home() {
 
     return () => unsubscribe();
   }, [setTable]);
+
+  // 1b. Fetch active menu items dynamically from backend database (with static fallback)
+  useEffect(() => {
+    if (!mounted) return;
+
+    const fetchDynamicMenu = async () => {
+      try {
+        const envUrl = process.env.NEXT_PUBLIC_API_URL || "https://booki-admin-backend.vercel.app";
+        // Ensure https for localhost fallback
+        const backendUrl = (envUrl.startsWith("http://localhost") || envUrl.startsWith("http://127.0.0.1")) 
+          ? envUrl.replace("http://", "https://") 
+          : envUrl;
+          
+        const res = await fetch(`${backendUrl}/api/menu?public=true`);
+        const data = await res.json();
+        
+        if (data.success && data.categories) {
+          const dbItems: any[] = [];
+          data.categories.forEach((cat: any) => {
+            cat.items.forEach((item: any) => {
+              dbItems.push({
+                id: item.id,
+                name: item.name,
+                category: cat.name,
+                price: item.price,
+                image: item.image,
+                veg: item.veg,
+                description: item.description,
+                feedback: item.feedback || { mustTry: 10, veryTasty: 10, good: 10, ok: 1 }
+              });
+            });
+          });
+          
+          if (dbItems.length > 0) {
+            setMenuItems(dbItems);
+            console.log(`🍟 Loaded ${dbItems.length} active menu items from backend!`);
+          }
+        }
+      } catch (err) {
+        console.warn("⚠️ Failed to load menu from database, using offline static fallback.", err);
+      }
+    };
+
+    fetchDynamicMenu();
+  }, [mounted]);
 
   // 2a. Connect socket + bind status listener ONCE on mount only
   // Having `orders` in deps caused a new listener to be added every time an update arrived!
@@ -282,7 +328,7 @@ export default function Home() {
 
         {/* Section Groups */}
         {CATEGORIES.map((category) => {
-          const categoryItems = MENU_DATA.filter((item) => item.category === category);
+          const categoryItems = menuItems.filter((item) => item.category === category);
           const categoryId = `category-${category.toLowerCase().replace(/\s+/g, "-")}`;
           
           return (
