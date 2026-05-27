@@ -40,6 +40,9 @@ export default function Home() {
 
   // 1a. Hydration guard to safely load Zustand persisted state only on the client
   useEffect(() => {
+    // Explicitly reset selectedTable on initial mount so refreshing/reopening always prompts for table
+    useCustomerOrderStore.getState().setTable(null);
+
     const timer = setTimeout(() => {
       setMounted(true);
       const storeState = useCustomerOrderStore.getState();
