@@ -7,9 +7,14 @@ import { useEffect, useRef } from "react";
 interface CategoryNavProps {
   activeCategory: string;
   setActiveCategory: (category: string) => void;
+  categories?: readonly string[] | string[];
 }
 
-export default function CategoryNav({ activeCategory, setActiveCategory }: CategoryNavProps) {
+export default function CategoryNav({ 
+  activeCategory, 
+  setActiveCategory,
+  categories = CATEGORIES
+}: CategoryNavProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activePillRef = useRef<HTMLButtonElement>(null);
 
@@ -56,7 +61,7 @@ export default function CategoryNav({ activeCategory, setActiveCategory }: Categ
         ref={containerRef}
         className="flex items-center gap-3 overflow-x-auto px-4 no-scrollbar whitespace-nowrap scroll-smooth"
       >
-        {CATEGORIES.map((category) => {
+        {categories.map((category) => {
           const isActive = activeCategory === category;
           return (
             <button

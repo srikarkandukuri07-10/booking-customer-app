@@ -17,9 +17,26 @@ export default function Home() {
   const [orders, setOrders] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("Starters");
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [dietaryFilter, setDietaryFilter] = useState<"ALL" | "VEG" | "NON_VEG">("ALL");
 
   const [menuItems, setMenuItems] = useState<any[]>(MENU_DATA);
   const setTable = useCustomerOrderStore((state) => state.setTable);
+
+  // Derive visible categories that have at least one item matching the current filter
+  const visibleCategories = (CATEGORIES as readonly string[]).filter((category) => {
+    const items = menuItems.filter((item) => item.category === category);
+    if (dietaryFilter === "ALL") return items.length > 0;
+    if (dietaryFilter === "VEG") return items.some((item) => item.veg === true);
+    if (dietaryFilter === "NON_VEG") return items.some((item) => item.veg === false);
+    return false;
+  });
+
+  // Auto-switch to first available category if the current activeCategory gets filtered out
+  useEffect(() => {
+    if (mounted && visibleCategories.length > 0 && !visibleCategories.includes(activeCategory)) {
+      setActiveCategory(visibleCategories[0]);
+    }
+  }, [dietaryFilter, menuItems, activeCategory, mounted]);
 
   // 1a. Hydration guard to safely load Zustand persisted state only on the client
   useEffect(() => {
@@ -284,10 +301,47 @@ export default function Home() {
       <CategoryNav 
         activeCategory={activeCategory} 
         setActiveCategory={setActiveCategory} 
+        categories={visibleCategories}
       />
 
       {/* 3. MENU ITEMS MAIN VIEWPORT */}
       <main className="flex-1 w-full max-w-md mx-auto px-4 py-6 flex flex-col gap-8">
+        
+        {/* Simple Dietary Filter (All / Veg / Non-Veg) */}
+        <div className="flex items-center justify-center gap-1.5 bg-white/[0.02] border border-white/[0.04] p-1 rounded-2xl w-fit mx-auto shadow-inner z-10 relative">
+          <button
+            onClick={() => setDietaryFilter("ALL")}
+            className={`px-4 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer select-none transition-all duration-300 ${
+              dietaryFilter === "ALL"
+                ? "bg-white/10 text-neutral-100 shadow border border-white/5"
+                : "text-neutral-500 hover:text-neutral-300 border border-transparent"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setDietaryFilter("VEG")}
+            className={`px-4 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer select-none transition-all duration-300 flex items-center gap-1.5 ${
+              dietaryFilter === "VEG"
+                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 shadow shadow-emerald-500/5"
+                : "text-neutral-500 hover:text-neutral-300 border border-transparent"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Veg Only
+          </button>
+          <button
+            onClick={() => setDietaryFilter("NON_VEG")}
+            className={`px-4 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer select-none transition-all duration-300 flex items-center gap-1.5 ${
+              dietaryFilter === "NON_VEG"
+                ? "bg-red-500/10 text-red-400 border border-red-500/10 shadow shadow-red-500/5"
+                : "text-neutral-500 hover:text-neutral-300 border border-transparent"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            Non-Veg Only
+          </button>
+        </div>
         
         {/* Real-time Live Order Status Tracker */}
         <AnimatePresence>
@@ -369,9 +423,18 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Section Groups */}
         {CATEGORIES.map((category) => {
-          const categoryItems = menuItems.filter((item) => item.category === category);
+          let categoryItems = menuItems.filter((item) => item.category === category);
+          
+          // Apply dietary Veg / Non-Veg filter dynamically
+          if (dietaryFilter === "VEG") {
+            categoryItems = categoryItems.filter((item) => item.veg === true);
+          } else if (dietaryFilter === "NON_VEG") {
+            categoryItems = categoryItems.filter((item) => item.veg === false);
+          }
+          
+          if (categoryItems.length === 0) return null; // Hide the category section completely if empty
+          
           const categoryId = `category-${category.toLowerCase().replace(/\s+/g, "-")}`;
           
           return (
