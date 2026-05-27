@@ -8,13 +8,15 @@ import FoodCard from "@/features/menu/FoodCard";
 import CartDrawer from "@/features/cart/CartDrawer";
 import { MENU_DATA, CATEGORIES } from "@/data/menuData";
 import { motion, AnimatePresence } from "framer-motion";
-import { Utensils, RotateCcw, AlertTriangle, Clock, CookingPot, CheckCircle2 } from "lucide-react";
+import { Utensils, RotateCcw, AlertTriangle, Clock, CookingPot, CheckCircle2, MessageSquare } from "lucide-react";
+import FeedbackModal from "@/features/feedback/FeedbackModal";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("Starters");
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const [menuItems, setMenuItems] = useState<any[]>(MENU_DATA);
   const setTable = useCustomerOrderStore((state) => state.setTable);
@@ -51,48 +53,50 @@ export default function Home() {
   }, [setTable]);
 
   // 1b. Fetch active menu items dynamically from backend database (with static fallback)
-  useEffect(() => {
-    if (!mounted) return;
-
-    const fetchDynamicMenu = async () => {
-      try {
-        const envUrl = process.env.NEXT_PUBLIC_API_URL || "https://booki-admin-backend.vercel.app";
-        // Ensure https for localhost fallback
-        const backendUrl = (envUrl.startsWith("http://localhost") || envUrl.startsWith("http://127.0.0.1")) 
-          ? envUrl.replace("http://", "https://") 
-          : envUrl;
-          
-        const res = await fetch(`${backendUrl}/api/menu?public=true`);
-        const data = await res.json();
+  const fetchDynamicMenu = async () => {
+    try {
+      const envUrl = process.env.NEXT_PUBLIC_API_URL || "https://booki-admin-backend.vercel.app";
+      // Ensure https for localhost fallback
+      const backendUrl = (envUrl.startsWith("http://localhost") || envUrl.startsWith("http://127.0.0.1")) 
+        ? envUrl.replace("http://", "https://") 
+        : envUrl;
         
-        if (data.success && data.categories) {
-          const dbItems: any[] = [];
-          data.categories.forEach((cat: any) => {
-            cat.items.forEach((item: any) => {
-              dbItems.push({
-                id: item.id,
-                name: item.name,
-                category: cat.name,
-                price: item.price,
-                image: item.image,
-                veg: item.veg,
-                description: item.description,
-                feedback: item.feedback || { mustTry: 10, veryTasty: 10, good: 10, ok: 1 }
-              });
+      const res = await fetch(`${backendUrl}/api/menu?public=true`);
+      const data = await res.json();
+      
+      if (data.success && data.categories) {
+        const dbItems: any[] = [];
+        data.categories.forEach((cat: any) => {
+          cat.items.forEach((item: any) => {
+            dbItems.push({
+              id: item.id,
+              name: item.name,
+              category: cat.name,
+              price: item.price,
+              image: item.image,
+              veg: item.veg,
+              description: item.description,
+              feedback: item.feedback || { mustTry: 10, veryTasty: 10, good: 10, ok: 1 },
+              feedbackStats: item.feedbackStats || null // Map dynamic feedback statistics from database!
             });
           });
-          
-          if (dbItems.length > 0) {
-            setMenuItems(dbItems);
-            console.log(`🍟 Loaded ${dbItems.length} active menu items from backend!`);
-          }
+        });
+        
+        if (dbItems.length > 0) {
+          setMenuItems(dbItems);
+          console.log(`🍟 Loaded ${dbItems.length} active menu items from backend!`);
         }
-      } catch (err) {
-        console.warn("⚠️ Failed to load menu from database, using offline static fallback.", err);
       }
-    };
+    } catch (err) {
+      console.warn("⚠️ Failed to load menu from database, using offline static fallback.", err);
+    }
+  };
 
-    fetchDynamicMenu();
+  useEffect(() => {
+    if (mounted) {
+      fetchDynamicMenu();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted]);
 
   // 2a. Connect socket + bind status listener ONCE on mount only
@@ -140,6 +144,45 @@ export default function Home() {
     // No cleanup needed — rooms persist for the session
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, orders.map((o) => o.id).join(",")]); // Only re-run when order IDs change
+
+  // 2c. Background polling fallback to track order status dynamically on Vercel
+  useEffect(() => {
+    if (!mounted || orders.length === 0) return;
+
+    const latestActiveOrder = orders.find(
+      (o) => o.status !== "DELIVERED" && o.status !== "CANCELLED" && o.status !== "SERVED"
+    );
+    if (!latestActiveOrder) return;
+
+    const pollOrderInterval = setInterval(async () => {
+      try {
+        const envUrl = process.env.NEXT_PUBLIC_API_URL || "https://booki-admin-backend.vercel.app";
+        const backendUrl = (envUrl.startsWith("http://localhost") || envUrl.startsWith("http://127.0.0.1")) 
+          ? envUrl.replace("http://", "https://") 
+          : envUrl;
+
+        const res = await fetch(`${backendUrl}/api/orders/${latestActiveOrder.id}`);
+        const data = await res.json();
+
+        if (data.success && data.order) {
+          const newStatus = data.order.status;
+          
+          if (newStatus !== latestActiveOrder.status) {
+            console.log(`📡 Background poll order status change: ${latestActiveOrder.id} → ${newStatus}`);
+            
+            // Update Zustand store directly
+            useCustomerOrderStore.setState((state) => ({
+              orders: state.orders.map((o) => (o.id === latestActiveOrder.id ? { ...o, status: newStatus } : o)),
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn("⚠️ Live Order Tracker Poll failed:", err);
+      }
+    }, 5000); // Poll every 5 seconds for fast live order tracking!
+
+    return () => clearInterval(pollOrderInterval);
+  }, [mounted, orders]);
 
 
   // Scroll spy: automatically update the active category pill as the user scrolls
@@ -361,6 +404,25 @@ export default function Home() {
 
       {/* 4. PERSISTENT SLIDING CART & FLOATING ACTION TRIGGER */}
       <CartDrawer />
+
+      {/* Floating Action Feedback Button (glowing chat logo) */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setIsFeedbackOpen(true)}
+        className="fixed bottom-24 left-4 z-40 w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-neutral-950 flex items-center justify-center shadow-[0_4px_20px_rgba(245,158,11,0.35)] cursor-pointer border border-amber-400/20 active:scale-95 transition-all"
+        title="Leave Feedback"
+      >
+        <MessageSquare className="w-5 h-5 fill-neutral-950/10 stroke-[2.5]" />
+      </motion.button>
+
+      {/* Dynamic Feedback Submission Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        menuItems={menuItems}
+        onFeedbackSubmitted={fetchDynamicMenu}
+      />
     </div>
   );
 }

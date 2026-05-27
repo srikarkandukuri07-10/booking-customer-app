@@ -24,7 +24,17 @@ export default function FoodCard({ item }: FoodCardProps) {
 
   // Identify the highest feedback reaction to show as the main badge
   const getTopFeedback = () => {
-    const { mustTry, veryTasty, good, ok } = item.feedback;
+    // If dynamic feedbackStats are available from the database, use them!
+    if ((item as any).feedbackStats) {
+      const stats = (item as any).feedbackStats;
+      const pct = stats.percentage;
+      if (stats.rating === "MUST_TRY") return { label: "Must Try", icon: <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />, pct };
+      if (stats.rating === "VERY_TASTY") return { label: "Very Tasty", icon: <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />, pct };
+      if (stats.rating === "GOOD") return { label: "Good", icon: <ThumbsUp className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />, pct };
+      return { label: "OK", icon: <Smile className="w-3.5 h-3.5 text-neutral-400" />, pct };
+    }
+
+    const { mustTry, veryTasty, good, ok } = item.feedback || { mustTry: 10, veryTasty: 10, good: 10, ok: 1 };
     const maxVal = Math.max(mustTry, veryTasty, good, ok);
     if (maxVal === mustTry) return { label: "Must Try", icon: <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />, pct: mustTry };
     if (maxVal === veryTasty) return { label: "Very Tasty", icon: <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />, pct: veryTasty };
@@ -122,31 +132,40 @@ export default function FoodCard({ item }: FoodCardProps) {
               <h4 className="font-bold text-neutral-400 mb-2 uppercase tracking-widest text-[9px]">
                 Community Reactions
               </h4>
-              <div className="grid grid-cols-2 gap-2 text-neutral-300">
-                <div className="flex items-center justify-between bg-white/[0.02] p-1.5 rounded-lg">
-                  <span className="flex items-center gap-1 text-neutral-400">
-                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" /> Must Try
-                  </span>
-                  <span className="font-semibold text-amber-400">{item.feedback.mustTry}%</span>
-                </div>
-                <div className="flex items-center justify-between bg-white/[0.02] p-1.5 rounded-lg">
-                  <span className="flex items-center gap-1 text-neutral-400">
-                    <Heart className="w-3 h-3 text-red-500 fill-red-500" /> Very Tasty
-                  </span>
-                  <span className="font-semibold text-red-500">{item.feedback.veryTasty}%</span>
-                </div>
-                <div className="flex items-center justify-between bg-white/[0.02] p-1.5 rounded-lg">
-                  <span className="flex items-center gap-1 text-neutral-400">
-                    <ThumbsUp className="w-3 h-3 text-emerald-400 fill-emerald-400" /> Good
-                  </span>
-                  <span className="font-semibold text-emerald-400">{item.feedback.good}%</span>
-                </div>
-                <div className="flex items-center justify-between bg-white/[0.02] p-1.5 rounded-lg">
-                  <span className="flex items-center gap-1 text-neutral-400">
-                    <Smile className="w-3 h-3 text-neutral-400" /> OK
-                  </span>
-                  <span className="font-semibold text-neutral-400">{item.feedback.ok}%</span>
-                </div>
+              {/* Real-time Reaction Details Grid (Expandable) */}
+              <div className="grid grid-cols-1 text-neutral-300">
+                {(item as any).feedbackStats ? (
+                  <div className="bg-white/[0.02] p-2.5 rounded-xl border border-white/5 text-center leading-relaxed">
+                    This dish is rated <span className="text-orange-500 font-extrabold uppercase">{(item as any).feedbackStats.rating.replace('_', ' ')}</span> by <span className="text-orange-500 font-extrabold">{(item as any).feedbackStats.percentage}%</span> of customers (based on {(item as any).feedbackStats.totalCount} recent votes).
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center justify-between bg-white/[0.02] p-1.5 rounded-lg">
+                      <span className="flex items-center gap-1 text-neutral-400">
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" /> Must Try
+                      </span>
+                      <span className="font-semibold text-amber-400">{(item.feedback || {}).mustTry || 0}%</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/[0.02] p-1.5 rounded-lg">
+                      <span className="flex items-center gap-1 text-neutral-400">
+                        <Heart className="w-3 h-3 text-red-500 fill-red-500" /> Very Tasty
+                      </span>
+                      <span className="font-semibold text-red-500">{(item.feedback || {}).veryTasty || 0}%</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/[0.02] p-1.5 rounded-lg">
+                      <span className="flex items-center gap-1 text-neutral-400">
+                        <ThumbsUp className="w-3 h-3 text-emerald-400 fill-emerald-400" /> Good
+                      </span>
+                      <span className="font-semibold text-emerald-400">{(item.feedback || {}).good || 0}%</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/[0.02] p-1.5 rounded-lg">
+                      <span className="flex items-center gap-1 text-neutral-400">
+                        <Smile className="w-3 h-3 text-neutral-400" /> OK
+                      </span>
+                      <span className="font-semibold text-neutral-400">{(item.feedback || {}).ok || 0}%</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
