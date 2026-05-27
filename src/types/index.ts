@@ -14,6 +14,7 @@ export interface MenuItem {
   veg: boolean;        // true = veg, false = non-veg
   description: string;
   feedback: MenuFeedback;
+  availability?: boolean;
 }
 
 export interface CartItem {

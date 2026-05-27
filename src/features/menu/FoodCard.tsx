@@ -12,6 +12,7 @@ interface FoodCardProps {
 
 export default function FoodCard({ item }: FoodCardProps) {
   const { cart, addToCart } = useCustomerOrderStore();
+  const isAvailable = item.availability !== false;
   const [instructions, setInstructions] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [showFeedbackDetails, setShowFeedbackDetails] = useState(false);
@@ -59,7 +60,9 @@ export default function FoodCard({ item }: FoodCardProps) {
   return (
     <motion.div 
       layout
-      className="glass-card rounded-3xl overflow-hidden flex flex-col w-full relative transition-all duration-300 border border-white/[0.05]"
+      className={`glass-card rounded-3xl overflow-hidden flex flex-col w-full relative transition-all duration-300 border border-white/[0.05] ${
+        !isAvailable ? "opacity-60 saturate-50" : ""
+      }`}
     >
       {/* Visual Header / Image Container */}
       <div className="h-44 w-full relative bg-neutral-900 overflow-hidden">
@@ -72,6 +75,14 @@ export default function FoodCard({ item }: FoodCardProps) {
         />
         {/* Image overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#121211] via-transparent to-transparent opacity-80" />
+
+        {!isAvailable && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
+            <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-full font-black uppercase tracking-widest text-[11px] shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+              Not Available Today
+            </span>
+          </div>
+        )}
 
         {/* Veg/Non-veg Dot Badge */}
         <div className="absolute top-3 left-3 bg-neutral-950/80 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-white/10">
@@ -181,18 +192,21 @@ export default function FoodCard({ item }: FoodCardProps) {
             placeholder="Add special instructions (e.g. less spicy)..."
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
-            className="w-full text-[11px] py-2.5 pl-8 pr-3 rounded-xl bg-black/40 border border-white/5 text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-amber-500/50 transition-colors"
+            disabled={!isAvailable}
+            className="w-full text-[11px] py-2.5 pl-8 pr-3 rounded-xl bg-black/40 border border-white/5 text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-amber-500/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-medium"
           />
         </div>
 
         {/* Add and Quantity Controls Container */}
         <div className="flex items-center gap-2 mt-auto">
           {/* Custom Quantity Stepper for local add state */}
-          <div className="flex items-center bg-black/40 border border-white/5 rounded-full p-1">
+          <div className={`flex items-center bg-black/40 border border-white/5 rounded-full p-1 transition-opacity duration-300 ${
+            !isAvailable ? "opacity-30 pointer-events-none" : ""
+          }`}>
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               className="w-7 h-7 flex items-center justify-center text-neutral-400 hover:text-neutral-200 transition-colors disabled:opacity-30 disabled:pointer-events-none"
-              disabled={quantity <= 1}
+              disabled={quantity <= 1 || !isAvailable}
             >
               <Minus className="w-3.5 h-3.5" />
             </button>
@@ -202,6 +216,7 @@ export default function FoodCard({ item }: FoodCardProps) {
             <button
               onClick={() => setQuantity(quantity + 1)}
               className="w-7 h-7 flex items-center justify-center text-neutral-400 hover:text-neutral-200 transition-colors"
+              disabled={!isAvailable}
             >
               <Plus className="w-3.5 h-3.5" />
             </button>
@@ -210,9 +225,11 @@ export default function FoodCard({ item }: FoodCardProps) {
           {/* Action Trigger Button */}
           <button
             onClick={handleAdd}
-            disabled={isAddedAnimation}
+            disabled={isAddedAnimation || !isAvailable}
             className={`flex-grow h-9 rounded-full font-bold text-xs tracking-wider uppercase flex items-center justify-center gap-1.5 transition-all duration-300 cursor-pointer select-none ${
-              isAddedAnimation
+              !isAvailable
+                ? "bg-neutral-800 text-neutral-500 border border-white/5 shadow-none cursor-not-allowed"
+                : isAddedAnimation
                 ? "bg-emerald-500 text-neutral-950 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
                 : "bg-amber-500 text-neutral-950 hover:bg-amber-600 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
             }`}
