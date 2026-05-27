@@ -5,11 +5,13 @@ import { submitOrderToBackend } from "@/lib/api";
 
 interface CustomerOrderStore {
   selectedTable: string | null;
+  customerName: string | null;
   cart: CartItem[];
   orders: OrderPayload[];
   isSubmitting: boolean;
   submitError: string | null;
   setTable: (table: string | null) => void;
+  setCustomerName: (name: string | null) => void;
   addToCart: (item: MenuItem, quantity: number, customInstructions: string) => void;
   removeFromCart: (itemId: string, customInstructions: string) => void;
   updateQuantity: (itemId: string, customInstructions: string, quantity: number) => void;
@@ -21,12 +23,14 @@ export const useCustomerOrderStore = create<CustomerOrderStore>()(
   persist(
     (set, get) => ({
       selectedTable: null,
+      customerName: null,
       cart: [],
       orders: [],
       isSubmitting: false,
       submitError: null,
 
       setTable: (table) => set({ selectedTable: table }),
+      setCustomerName: (name) => set({ customerName: name }),
 
       addToCart: (item, quantity, customInstructions) => set((state) => {
         const existingItemIndex = state.cart.findIndex(
@@ -84,9 +88,9 @@ export const useCustomerOrderStore = create<CustomerOrderStore>()(
       clearCart: () => set({ cart: [] }),
 
       submitOrder: async () => {
-        const { selectedTable, cart } = get();
-        if (cart.length === 0 || !selectedTable) {
-          return { success: false, error: "Cart is empty or table not selected." };
+        const { selectedTable, customerName, cart } = get();
+        if (cart.length === 0 || !selectedTable || !customerName) {
+          return { success: false, error: "Cart is empty, table not selected, or name missing." };
         }
 
         set({ isSubmitting: true, submitError: null });
@@ -96,9 +100,12 @@ export const useCustomerOrderStore = create<CustomerOrderStore>()(
           0
         );
 
+        // Format table with customer name so waiters can verify it easily!
+        const tableWithCustomer = `${selectedTable} (${customerName})`;
+
         try {
           // Send request to the physical admin backend APIs
-          const response = await submitOrderToBackend(selectedTable, cart, totalAmount);
+          const response = await submitOrderToBackend(tableWithCustomer, cart, totalAmount);
           
           if (response.success) {
             const orderId = (response as any).order?.id || response.orderId || `ord_${Date.now()}`;

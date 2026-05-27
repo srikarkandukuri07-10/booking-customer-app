@@ -14,6 +14,7 @@ import FeedbackModal from "@/features/feedback/FeedbackModal";
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [customerName, setCustomerNameState] = useState<string | null>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("Starters");
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -40,19 +41,22 @@ export default function Home() {
 
   // 1a. Hydration guard to safely load Zustand persisted state only on the client
   useEffect(() => {
-    // Explicitly reset selectedTable on initial mount so refreshing/reopening always prompts for table
+    // Explicitly reset selectedTable and customerName on initial mount so refreshing/reopening always prompts for table
     useCustomerOrderStore.getState().setTable(null);
+    useCustomerOrderStore.getState().setCustomerName(null);
 
     const timer = setTimeout(() => {
       setMounted(true);
       const storeState = useCustomerOrderStore.getState();
       setSelectedTable(storeState.selectedTable);
+      setCustomerNameState(storeState.customerName);
       setOrders(storeState.orders || []);
     }, 0);
 
     // Subscribe to Zustand store changes to keep state perfectly synchronized
     const unsubscribe = useCustomerOrderStore.subscribe((state) => {
       setSelectedTable(state.selectedTable);
+      setCustomerNameState(state.customerName);
       setOrders(state.orders || []);
     });
 
@@ -267,7 +271,7 @@ export default function Home() {
   }
 
   // B. Route Flow 1: Table Selection Screen
-  if (!selectedTable) {
+  if (!selectedTable || !customerName) {
     return <TableSelect />;
   }
 
