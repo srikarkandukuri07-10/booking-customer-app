@@ -16,12 +16,12 @@ export default function TableSelect() {
   // On mount, check if we have a persisted identity from a previous session
   useEffect(() => {
     const storeState = useCustomerOrderStore.getState();
-    if (storeState.customerName) {
-      setNameInput(storeState.customerName);
+    if (storeState.lastCustomerName) {
+      setNameInput(storeState.lastCustomerName);
       setReturningUser(true);
     }
-    if (storeState.selectedTable && !selectedTable) {
-      setSelectedTableLocal(storeState.selectedTable);
+    if (storeState.lastSelectedTable && !selectedTable) {
+      setSelectedTableLocal(storeState.lastSelectedTable);
     }
   }, [selectedTable]);
 
@@ -30,8 +30,8 @@ export default function TableSelect() {
     if (nameInput.trim() && tableToBind) {
       const storeState = useCustomerOrderStore.getState();
       const isReturning =
-        storeState.customerName === nameInput.trim() &&
-        storeState.selectedTable === tableToBind;
+        storeState.lastCustomerName === nameInput.trim() &&
+        storeState.lastSelectedTable === tableToBind;
 
       if (!isReturning) {
         // New customer or different identity — clear old orders
@@ -39,6 +39,10 @@ export default function TableSelect() {
       }
 
       setCustomerName(nameInput.trim());
+      useCustomerOrderStore.setState({
+        lastCustomerName: nameInput.trim(),
+        lastSelectedTable: tableToBind
+      });
       if (selectedTableLocal) {
         setTable(selectedTableLocal);
       }

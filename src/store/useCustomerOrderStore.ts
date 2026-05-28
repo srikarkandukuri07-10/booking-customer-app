@@ -10,8 +10,12 @@ interface CustomerOrderStore {
   orders: OrderPayload[];
   isSubmitting: boolean;
   submitError: string | null;
+  lastCustomerName: string | null;
+  lastSelectedTable: string | null;
   setTable: (table: string | null) => void;
   setCustomerName: (name: string | null) => void;
+  setLastCustomerName: (name: string | null) => void;
+  setLastSelectedTable: (table: string | null) => void;
   addToCart: (item: MenuItem, quantity: number, customInstructions: string) => void;
   removeFromCart: (itemId: string, customInstructions: string) => void;
   updateQuantity: (itemId: string, customInstructions: string, quantity: number) => void;
@@ -28,9 +32,13 @@ export const useCustomerOrderStore = create<CustomerOrderStore>()(
       orders: [],
       isSubmitting: false,
       submitError: null,
+      lastCustomerName: null,
+      lastSelectedTable: null,
 
       setTable: (table) => set({ selectedTable: table }),
       setCustomerName: (name) => set({ customerName: name }),
+      setLastCustomerName: (name) => set({ lastCustomerName: name }),
+      setLastSelectedTable: (table) => set({ lastSelectedTable: table }),
 
       addToCart: (item, quantity, customInstructions) => set((state) => {
         const existingItemIndex = state.cart.findIndex(
@@ -146,10 +154,10 @@ export const useCustomerOrderStore = create<CustomerOrderStore>()(
     {
       name: "restaurant-ordering-storage",
       partialize: (state) => ({
-        selectedTable: state.selectedTable,
-        customerName: state.customerName,
         cart: state.cart,
-        orders: state.orders
+        orders: state.orders,
+        lastCustomerName: state.lastCustomerName,
+        lastSelectedTable: state.lastSelectedTable
       })
     }
   )
