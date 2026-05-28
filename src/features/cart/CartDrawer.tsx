@@ -159,12 +159,18 @@ export default function CartDrawer() {
                     {selectedTable}
                   </span>
 
-                  <div className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-left text-xs mb-4 text-neutral-400 font-mono flex flex-col gap-2 flex-shrink-0">
-                    <div className="flex justify-between">
+                  <div className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-left text-xs mb-4 text-neutral-400 font-mono flex flex-col gap-2.5 flex-shrink-0">
+                    <div className="flex justify-between items-center">
                       <span>Order Reference:</span>
                       <span className="text-neutral-200 font-semibold">{lastPlacedOrderId || "ORD-N/A"}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
+                      <span>Queue Token Number:</span>
+                      <span className="text-amber-500 font-black text-sm">
+                        #{orders[0]?.tokenNumber || "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
                       <span>Status:</span>
                       <span className="text-amber-500 font-bold flex items-center gap-1.5 animate-pulse">
                         <CookingPot className="w-3.5 h-3.5" /> Preparing

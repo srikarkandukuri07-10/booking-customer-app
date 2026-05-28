@@ -19,6 +19,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<string>("Starters");
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [dietaryFilter, setDietaryFilter] = useState<"ALL" | "VEG" | "NON_VEG">("ALL");
+  const [currentTokenRunning, setCurrentTokenRunning] = useState<number>(1);
 
   const [menuItems, setMenuItems] = useState<any[]>(MENU_DATA);
   const setTable = useCustomerOrderStore((state) => state.setTable);
@@ -129,9 +130,27 @@ export default function Home() {
     }
   };
 
+  const fetchCurrentToken = async () => {
+    try {
+      const envUrl = process.env.NEXT_PUBLIC_API_URL || "https://booki-admin-backend.vercel.app";
+      const backendUrl = (envUrl.startsWith("http://localhost") || envUrl.startsWith("http://127.0.0.1")) 
+        ? envUrl.replace("http://", "https://") 
+        : envUrl;
+        
+      const res = await fetch(`${backendUrl}/api/token/running`);
+      const data = await res.json();
+      if (data.success && typeof data.currentToken === "number") {
+        setCurrentTokenRunning(data.currentToken);
+      }
+    } catch (err) {
+      console.warn("⚠️ Failed to load current running token:", err);
+    }
+  };
+
   useEffect(() => {
     if (mounted) {
       fetchDynamicMenu();
+      fetchCurrentToken();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted]);
@@ -142,6 +161,7 @@ export default function Home() {
 
     const pollMenuInterval = setInterval(() => {
       fetchDynamicMenu();
+      fetchCurrentToken(); // Also sync running token!
     }, 2000); // Poll every 2 seconds for immediate menu availability sync!
 
     return () => clearInterval(pollMenuInterval);
@@ -169,13 +189,20 @@ export default function Home() {
       fetchDynamicMenu();
     };
 
+    const handleTokenUpdate = (data: { currentToken: number }) => {
+      console.log("📡 Token running update received via Socket.IO:", data.currentToken);
+      setCurrentTokenRunning(data.currentToken);
+    };
+
     socket.on("status-changed", handleStatusChange);
     socket.on("menu-updated", handleMenuUpdate);
-    console.log("📡 Socket.IO: status-changed & menu-updated listeners bound.");
+    socket.on("current-token-updated", handleTokenUpdate);
+    console.log("📡 Socket.IO: status-changed, menu-updated & current-token-updated listeners bound.");
 
     return () => {
       socket.off("status-changed", handleStatusChange);
       socket.off("menu-updated", handleMenuUpdate);
+      socket.off("current-token-updated", handleTokenUpdate);
       console.log("📡 Socket.IO: listeners removed.");
     };
   }, [mounted]); // ← only runs once when component mounts
@@ -343,7 +370,27 @@ export default function Home() {
       />
 
       {/* 3. MENU ITEMS MAIN VIEWPORT */}
-      <main className="flex-1 w-full max-w-md mx-auto px-4 py-6 flex flex-col gap-8">
+      <main className="flex-1 w-full max-w-md mx-auto px-4 py-6 flex flex-col gap-6">
+        
+        {/* Real-time Queue Running Token Banner */}
+        <div className="w-full bg-white/[0.02] border border-white/[0.04] p-3.5 px-4 rounded-3xl flex items-center justify-between shadow-[0_4px_24px_rgba(0,0,0,0.2)] backdrop-blur-md relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/[0.01] to-transparent pointer-events-none" />
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            </span>
+            <span className="text-[10px] uppercase font-black tracking-widest text-neutral-400">
+              Kitchen Token Pipeline
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Preparing Token:</span>
+            <span className="bg-amber-500 text-neutral-950 font-black text-xs px-2.5 py-1 rounded-lg font-mono tracking-wide shadow-sm shadow-amber-500/10">
+              #{currentTokenRunning}
+            </span>
+          </div>
+        </div>
         
         {/* Simple Dietary Filter (All / Veg / Non-Veg) */}
         <div className="flex items-center justify-center gap-1.5 bg-white/[0.02] border border-white/[0.04] p-1 rounded-2xl w-fit mx-auto shadow-inner z-10 relative">
@@ -448,6 +495,21 @@ export default function Home() {
                     transition={{ duration: 0.8, ease: "easeOut" }}
                   />
                 </div>
+
+                {latestOrder.tokenNumber && latestOrder.tokenNumber !== currentTokenRunning ? (
+                  <div className="flex items-center justify-between border-t border-white/5 pt-2.5 mt-2.5 text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                    <span>Your Queue Token: <span className="text-amber-500 font-extrabold font-mono text-xs">#{latestOrder.tokenNumber}</span></span>
+                    {latestOrder.tokenNumber > currentTokenRunning ? (
+                      <span>Queue Position: <span className="text-neutral-300 font-extrabold font-mono text-xs">{latestOrder.tokenNumber - currentTokenRunning} orders away</span></span>
+                    ) : (
+                      <span className="text-emerald-400 font-extrabold">In Service</span>
+                    )}
+                  </div>
+                ) : latestOrder.tokenNumber && latestOrder.tokenNumber === currentTokenRunning ? (
+                  <div className="flex items-center gap-1.5 border-t border-white/5 pt-2.5 mt-2.5 text-[10px] text-emerald-400 font-black uppercase tracking-wider animate-pulse">
+                    <span>🍽️ Your order is being served right now! Bon Appétit!</span>
+                  </div>
+                ) : null}
               </div>
             </motion.div>
           )}
