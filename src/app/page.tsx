@@ -372,24 +372,32 @@ export default function Home() {
       {/* 3. MENU ITEMS MAIN VIEWPORT */}
       <main className="flex-1 w-full max-w-md mx-auto px-4 py-6 flex flex-col gap-6">
         
-        {/* Real-time Queue Running Token Banner */}
-        <div className="w-full bg-white/[0.02] border border-white/[0.04] p-3.5 px-4 rounded-3xl flex items-center justify-between shadow-[0_4px_24px_rgba(0,0,0,0.2)] backdrop-blur-md relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/[0.01] to-transparent pointer-events-none" />
-          <div className="flex items-center gap-2.5">
+        {/* Massive Centered Real-time Running Token Billboard (Primary Attraction) */}
+        <div className="w-full bg-[#161615]/90 border border-amber-500/10 rounded-3xl p-6 flex flex-col items-center justify-center text-center shadow-[0_8px_32px_rgba(245,158,11,0.06)] backdrop-blur-xl relative overflow-hidden my-2">
+          {/* Glowing background ring */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-amber-500/[0.04] rounded-full blur-[35px] pointer-events-none" />
+          
+          <div className="flex items-center gap-2 mb-1.5 z-10">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
             </span>
-            <span className="text-[10px] uppercase font-black tracking-widest text-neutral-400">
-              Kitchen Token Pipeline
+            <span className="text-[10px] uppercase font-black tracking-[0.2em] text-amber-500/90">
+              Now Preparing Token
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Preparing Token:</span>
-            <span className="bg-amber-500 text-neutral-950 font-black text-xs px-2.5 py-1 rounded-lg font-mono tracking-wide shadow-sm shadow-amber-500/10">
-              #{currentTokenRunning}
-            </span>
-          </div>
+
+          <h1 className="text-7xl font-black text-white font-mono tracking-tight my-2 drop-shadow-[0_0_20px_rgba(245,158,11,0.25)] z-10 flex items-baseline justify-center">
+            <span className="text-amber-500 text-3xl font-bold mr-1 font-serif">#</span>
+            {currentTokenRunning}
+          </h1>
+
+          <p className="text-[10px] text-neutral-400 font-semibold tracking-wider uppercase mt-1.5 z-10">
+            {currentTokenRunning === 0 
+              ? "All caught up! Queue is currently empty." 
+              : "Track this number to know when to collect your food"
+            }
+          </p>
         </div>
         
         {/* Simple Dietary Filter (All / Veg / Non-Veg) */}
