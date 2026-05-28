@@ -12,6 +12,13 @@ import { Utensils, RotateCcw, AlertTriangle, Clock, CookingPot, CheckCircle2, Me
 import FeedbackModal from "@/features/feedback/FeedbackModal";
 import GamesZone from "@/features/games/GamesZone";
 
+const GAME_ENGAGEMENT_MESSAGES = [
+  "Hey wanna play some games while u recieve order? 🎮",
+  "Bored waiting? Play real-time multiplayer games with other diners! ⚔️",
+  "Beat the wait! Earn XP and conquer the restaurant leaderboard! 🏆",
+  "Play with diners at other tables in the Games Zone right now! 🍕"
+];
+
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -22,9 +29,12 @@ export default function Home() {
   const [dietaryFilter, setDietaryFilter] = useState<"ALL" | "VEG" | "NON_VEG">("ALL");
   const [currentTokenRunning, setCurrentTokenRunning] = useState<number>(1);
   const [gamesOpen, setGamesOpen] = useState(false);
+  const [showGamesTooltip, setShowGamesTooltip] = useState(true);
+  const [currentTooltipMsgIndex, setCurrentTooltipMsgIndex] = useState(0);
 
   const [menuItems, setMenuItems] = useState<any[]>(MENU_DATA);
   const setTable = useCustomerOrderStore((state) => state.setTable);
+  const hasActiveOrder = orders.some((o) => o.status !== "CANCELLED");
 
   // Derive visible categories that have at least one item matching the current filter
   const visibleCategories = (CATEGORIES as readonly string[]).filter((category) => {
@@ -264,6 +274,17 @@ export default function Home() {
     return () => clearInterval(pollOrderInterval);
   }, [mounted, orders]);
 
+  // Cycle through engaging tooltip messages
+  useEffect(() => {
+    if (!hasActiveOrder || !showGamesTooltip) return;
+
+    const interval = setInterval(() => {
+      setCurrentTooltipMsgIndex((prev) => (prev + 1) % GAME_ENGAGEMENT_MESSAGES.length);
+    }, 7000); // Change message every 7 seconds
+
+    return () => clearInterval(interval);
+  }, [hasActiveOrder, showGamesTooltip]);
+
 
   // Scroll spy: automatically update the active category pill as the user scrolls
   useEffect(() => {
@@ -336,9 +357,7 @@ export default function Home() {
     .filter((o) => o.status !== "CANCELLED")
     .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
-  const hasActiveOrder = orders.some(
-    (o) => o.status !== "CANCELLED"
-  );
+
 
   // C. Route Flow 2: Main Menu & Dashboard
   // If Games Zone is open, render it as full overlay
@@ -655,19 +674,50 @@ export default function Home() {
       {/* Floating Games Zone Button — Only visible after placing an order */}
       <AnimatePresence>
         {hasActiveOrder && (
-          <motion.button
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setGamesOpen(true)}
-            className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 hover:from-violet-600 hover:to-purple-800 text-white flex items-center justify-center shadow-[0_4px_25px_rgba(139,92,246,0.45)] cursor-pointer border border-violet-400/30 active:scale-95 transition-all"
-            title="Games Zone"
-          >
-            <Gamepad2 className="w-6 h-6 stroke-[2.5]" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-[#0f0f0e] animate-pulse" />
-          </motion.button>
+          <div className="fixed bottom-24 right-4 z-40 flex flex-col items-end">
+            
+            {/* Catchy Engagement Pop-up Bubble / Tooltip */}
+            <AnimatePresence>
+              {showGamesTooltip && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 15 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: 15 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  className="mb-3.5 mr-2 max-w-[220px] bg-gradient-to-br from-[#1d113c] to-[#120826] border border-violet-500/30 p-3.5 rounded-2xl shadow-[0_8px_32px_rgba(139,92,246,0.25)] backdrop-blur-md relative text-left"
+                >
+                  {/* Close button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowGamesTooltip(false);
+                    }}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-neutral-900 border border-white/10 flex items-center justify-center text-[10px] text-neutral-400 hover:text-white cursor-pointer active:scale-95 transition-all"
+                  >
+                    ×
+                  </button>
+
+                  <p className="text-[11px] font-semibold text-violet-200 leading-normal pr-1.5">
+                    {GAME_ENGAGEMENT_MESSAGES[currentTooltipMsgIndex]}
+                  </p>
+
+                  {/* Tooltip Triangle pointer pointing towards the button */}
+                  <div className="absolute -bottom-1 right-6 w-2.5 h-2.5 bg-[#120826] border-r border-b border-violet-500/30 rotate-45" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setGamesOpen(true)}
+              className="w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 hover:from-violet-600 hover:to-purple-800 text-white flex items-center justify-center shadow-[0_4px_25px_rgba(139,92,246,0.45)] cursor-pointer border border-violet-400/30 active:scale-95 transition-all relative"
+              title="Games Zone"
+            >
+              <Gamepad2 className="w-6 h-6 stroke-[2.5]" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-[#0f0f0e] animate-pulse" />
+            </motion.button>
+          </div>
         )}
       </AnimatePresence>
 
