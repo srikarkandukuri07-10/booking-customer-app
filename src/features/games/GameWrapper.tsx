@@ -43,11 +43,34 @@ export default function GameWrapper({
   const [gameOver, setGameOver] = useState(false);
   const [showFoodReady, setShowFoodReady] = useState(false);
   const [realPlayers, setRealPlayers] = useState<GamePlayer[]>([]);
+  const [inLobby, setInLobby] = useState(true);
+  const [lobbyTimeLeft, setLobbyTimeLeft] = useState(40);
   const socketRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const lobbyTimerRef = useRef<NodeJS.Timeout | null>(null);
   const gameKeyRef = useRef(Date.now()); // Unique key to force game remount on re-entry
 
   const { addXP, recordGameScore } = useXPStore();
+
+  // Lobby Matchmaking countdown timer
+  useEffect(() => {
+    if (!inLobby) return;
+
+    lobbyTimerRef.current = setInterval(() => {
+      setLobbyTimeLeft((prev) => {
+        if (prev <= 1) {
+          setInLobby(false);
+          clearInterval(lobbyTimerRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (lobbyTimerRef.current) clearInterval(lobbyTimerRef.current);
+    };
+  }, [inLobby]);
 
   // Connect to game socket room
   useEffect(() => {
@@ -107,7 +130,7 @@ export default function GameWrapper({
 
   // Game timer
   useEffect(() => {
-    if (gameOver) return;
+    if (gameOver || inLobby) return;
 
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
@@ -123,7 +146,7 @@ export default function GameWrapper({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [gameOver]);
+  }, [gameOver, inLobby]);
 
   // Monitor food ready status
   useEffect(() => {
@@ -264,8 +287,117 @@ export default function GameWrapper({
         </span>
       </header>
 
-      {/* Game Canvas Area */}
-      <main className="flex-1 relative">{renderGame()}</main>
+      {/* Matchmaking Lobby or Game Canvas Area */}
+      {inLobby ? (
+        <div className="flex-1 max-w-md w-full mx-auto px-6 py-8 flex flex-col justify-between items-center text-center relative z-10">
+          
+          {/* Header Info */}
+          <div className="w-full flex flex-col items-center">
+            <span className="text-[10px] bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full text-violet-400 font-bold uppercase tracking-widest animate-pulse">
+              🎮 Matchmaking Lobby
+            </span>
+            <h2 className="text-3xl font-black font-serif text-white mt-4 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+              {gameName}
+            </h2>
+            <p className="text-neutral-400 text-xs mt-2 max-w-xs leading-normal">
+              Wait for other diners inside the restaurant to join. Game starts when the timer hits zero!
+            </p>
+          </div>
+
+          {/* Central Matchmaking Countdown clock */}
+          <div className="my-8 relative flex items-center justify-center">
+            {/* Glowing neon animated circles */}
+            <div className="absolute w-40 h-40 rounded-full border border-violet-500/10 animate-ping [animation-duration:3s]" />
+            <div className="absolute w-36 h-36 rounded-full bg-violet-500/[0.03] blur-[15px]" />
+            
+            <div className="w-32 h-32 rounded-full border-2 border-dashed border-violet-500/35 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md shadow-[0_0_25px_rgba(139,92,246,0.1)] relative">
+              <span className="text-[9px] uppercase font-black tracking-widest text-violet-400 leading-none">
+                Starts In
+              </span>
+              <motion.span 
+                key={lobbyTimeLeft}
+                initial={{ scale: 0.8, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-4xl font-black font-mono mt-1 text-white leading-none drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+              >
+                {lobbyTimeLeft}s
+              </motion.span>
+            </div>
+          </div>
+
+          {/* Diners Joined in Lobby */}
+          <div className="w-full flex flex-col gap-3.5 text-left bg-white/[0.01] border border-white/[0.04] p-5 rounded-3xl backdrop-blur-md shadow-2xl flex-1 max-h-[300px] overflow-y-auto no-scrollbar">
+            <h4 className="text-[10px] font-black tracking-widest uppercase text-neutral-400 flex items-center justify-between">
+              <span>Diners Joined in Lobby</span>
+              <span className="text-violet-400 font-mono font-bold">({realPlayers.length + 1} players)</span>
+            </h4>
+
+            <div className="flex flex-col gap-2.5 mt-2.5">
+              {/* You / Host */}
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="bg-amber-500/10 border border-amber-500/25 p-3 rounded-2xl flex items-center justify-between shadow-[0_4px_12px_rgba(245,158,11,0.05)]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center font-bold text-amber-500 text-xs font-mono">
+                    ME
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-neutral-200">{customerName}</span>
+                    <span className="text-[9px] text-amber-500 font-semibold uppercase mt-0.5 tracking-wider">{tableName}</span>
+                  </div>
+                </div>
+                <span className="text-[8px] bg-amber-500 text-neutral-950 font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Ready
+                </span>
+              </motion.div>
+
+              {/* Other players */}
+              {realPlayers.map((player, index) => (
+                <motion.div
+                  key={player.socketId}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: (index + 1) * 0.1 }}
+                  className="bg-white/[0.02] border border-white/[0.04] p-3 rounded-2xl flex items-center justify-between hover:border-violet-500/20 transition-all duration-300"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center font-bold text-violet-400 text-xs font-mono">
+                      {index + 1}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-neutral-300">{player.playerName}</span>
+                      <span className="text-[9px] text-neutral-500 font-semibold uppercase mt-0.5 tracking-wider">{player.tableName}</span>
+                    </div>
+                  </div>
+                  <span className="text-[8px] bg-violet-500/20 text-violet-400 font-black px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                    Joined
+                  </span>
+                </motion.div>
+              ))}
+
+              {/* Display empty slots if no other diners joined */}
+              {realPlayers.length === 0 && (
+                <p className="text-[10px] text-neutral-500 text-center italic mt-4">
+                  No other diners in this game lobby yet. Waiting...
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Footer Status Tip */}
+          <div className="w-full mt-6 bg-violet-500/5 border border-violet-500/10 p-3 rounded-2xl">
+            <p className="text-[9px] text-violet-300/80 leading-normal">
+              💡 Did you know? Diner avatars will display their custom name and table number directly inside the multiplayer canvas arena!
+            </p>
+          </div>
+
+        </div>
+      ) : (
+        /* Actual Game Canvas Area */
+        <main className="flex-1 relative">{renderGame()}</main>
+      )}
 
       {/* Game Over Overlay */}
       <AnimatePresence>
