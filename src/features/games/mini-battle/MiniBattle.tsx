@@ -35,6 +35,7 @@ interface Entity {
   shootCooldown: number;
   angle: number;
   socketId?: string;
+  respawnCooldown?: number;
 }
 
 interface Bullet {
@@ -105,6 +106,7 @@ export default function MiniBattle({
       alive: true,
       shootCooldown: 0,
       angle: 0,
+      respawnCooldown: 0,
     };
 
     // Remote players
@@ -292,6 +294,19 @@ export default function MiniBattle({
         }
       }
 
+      // Handle player respawn
+      if (!player.alive) {
+        player.respawnCooldown = Math.max(0, (player.respawnCooldown || 0) - 1);
+        if (player.respawnCooldown === 0) {
+          player.alive = true;
+          player.hp = player.maxHp;
+          player.x = W / 2;
+          player.y = H / 2;
+          player.vx = 0;
+          player.vy = 0;
+        }
+      }
+
       // Bot AI
       gs.bots.forEach((bot) => {
         if (!bot.alive) return;
@@ -388,6 +403,9 @@ export default function MiniBattle({
             }
             if (entity.hp <= 0) {
               entity.alive = false;
+              if (entity === player) {
+                entity.respawnCooldown = 120; // 2 seconds at 60fps
+              }
               if (b.owner === customerName) {
                 gs.eliminations++;
                 gs.score += 20;
@@ -524,6 +542,15 @@ export default function MiniBattle({
         ctx.textAlign = "center";
         ctx.fillText(entity.name.slice(0, 10), entity.x, barY - 3);
       });
+
+      // Render respawn message
+      if (!player.alive) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        const remainingSecs = Math.ceil((player.respawnCooldown || 0) / 60);
+        ctx.fillText(`RESPAWNING IN ${remainingSecs}S...`, W / 2, H / 2 - 40);
+      }
 
       // HUD
       ctx.fillStyle = "rgba(255,255,255,0.7)";

@@ -9,9 +9,11 @@ const getSocketUrl = (): string => {
 
   const envUrl = process.env.NEXT_PUBLIC_API_URL || "https://localhost:3000";
 
-  // Always upgrade localhost URLs to HTTPS (booki-back is HTTPS-only)
-  if (envUrl.startsWith("http://localhost") || envUrl.startsWith("http://127.0.0.1")) {
-    return envUrl.replace("http://", "https://");
+  // If testing on a mobile device or local network, automatically replace localhost with current window location hostname!
+  if (envUrl.includes("localhost") || envUrl.includes("127.0.0.1")) {
+    const currentHostname = window.location.hostname;
+    const port = envUrl.split(":").pop()?.replace(/\D/g, "") || "3000";
+    return `https://${currentHostname}:${port}`;
   }
 
   return envUrl;
