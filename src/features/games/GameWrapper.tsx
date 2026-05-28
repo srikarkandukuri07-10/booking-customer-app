@@ -52,14 +52,30 @@ export default function GameWrapper({
 
   const { addXP, recordGameScore } = useXPStore();
 
+  // Local fallback matchmaking countdown timer (guarantees timer never gets stuck)
+  useEffect(() => {
+    if (!inLobby) return;
+
+    const interval = setInterval(() => {
+      setLobbyTimeLeft((prev) => {
+        if (prev <= 1) {
+          setInLobby(false);
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [inLobby]);
+
   // Connect to game socket room and handle server-driven lobby matchmaking
   useEffect(() => {
-    let socket: any = null;
-
     const setupSocket = async () => {
       try {
         const socketModule = await import("@/lib/socket");
-        socket = socketModule.socket;
+        const socket = socketModule.socket;
         socketModule.connectSocket();
         socketRef.current = socket;
 
@@ -119,13 +135,14 @@ export default function GameWrapper({
     setupSocket();
 
     return () => {
-      if (socket) {
-        socket.emit("leave-game", { gameId });
-        socket.off("game-players-updated");
-        socket.off("game-lobby-timer-updated");
-        socket.off("game-lobby-start");
-        socket.off("game-action-broadcast");
-        socket.off("game-score-broadcast");
+      const activeSocket = socketRef.current;
+      if (activeSocket) {
+        activeSocket.emit("leave-game", { gameId });
+        activeSocket.off("game-players-updated");
+        activeSocket.off("game-lobby-timer-updated");
+        activeSocket.off("game-lobby-start");
+        activeSocket.off("game-action-broadcast");
+        activeSocket.off("game-score-broadcast");
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
