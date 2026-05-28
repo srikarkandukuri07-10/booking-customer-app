@@ -8,8 +8,9 @@ import FoodCard from "@/features/menu/FoodCard";
 import CartDrawer from "@/features/cart/CartDrawer";
 import { MENU_DATA, CATEGORIES } from "@/data/menuData";
 import { motion, AnimatePresence } from "framer-motion";
-import { Utensils, RotateCcw, AlertTriangle, Clock, CookingPot, CheckCircle2, MessageSquare } from "lucide-react";
+import { Utensils, RotateCcw, AlertTriangle, Clock, CookingPot, CheckCircle2, MessageSquare, Gamepad2, Wallet } from "lucide-react";
 import FeedbackModal from "@/features/feedback/FeedbackModal";
+import GamesZone from "@/features/games/GamesZone";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -20,6 +21,7 @@ export default function Home() {
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [dietaryFilter, setDietaryFilter] = useState<"ALL" | "VEG" | "NON_VEG">("ALL");
   const [currentTokenRunning, setCurrentTokenRunning] = useState<number>(1);
+  const [gamesOpen, setGamesOpen] = useState(false);
 
   const [menuItems, setMenuItems] = useState<any[]>(MENU_DATA);
   const setTable = useCustomerOrderStore((state) => state.setTable);
@@ -42,10 +44,6 @@ export default function Home() {
 
   // 1a. Hydration guard to safely load Zustand persisted state only on the client
   useEffect(() => {
-    // Explicitly reset selectedTable and customerName on initial mount so refreshing/reopening always prompts for table
-    useCustomerOrderStore.getState().setTable(null);
-    useCustomerOrderStore.getState().setCustomerName(null);
-
     const timer = setTimeout(() => {
       setMounted(true);
       const storeState = useCustomerOrderStore.getState();
@@ -333,7 +331,30 @@ export default function Home() {
     (o) => o.status !== "DELIVERED" && o.status !== "CANCELLED" && o.status !== "SERVED"
   );
 
+  // Calculate cumulative pending bill from all orders this session
+  const totalPendingBill = orders
+    .filter((o) => o.status !== "CANCELLED")
+    .reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+  const hasActiveOrder = orders.some(
+    (o) => o.status !== "CANCELLED"
+  );
+
   // C. Route Flow 2: Main Menu & Dashboard
+  // If Games Zone is open, render it as full overlay
+  if (gamesOpen && hasActiveOrder) {
+    return (
+      <GamesZone
+        onClose={() => setGamesOpen(false)}
+        customerName={customerName || "Player"}
+        tableName={selectedTable || "Table 1"}
+        totalSpent={totalPendingBill}
+        currentTokenRunning={currentTokenRunning}
+        latestOrder={latestOrder}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0f0f0e] text-neutral-100 flex flex-col pb-24 relative selection:bg-amber-500 selection:text-neutral-950">
       
@@ -531,6 +552,50 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Pending Bill Card */}
+        {totalPendingBill > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full bg-gradient-to-br from-[#1a1a18]/90 to-[#161615]/90 border border-amber-500/15 rounded-3xl p-5 shadow-[0_8px_32px_rgba(245,158,11,0.08)] backdrop-blur-xl relative overflow-hidden"
+          >
+            {/* Decorative glow */}
+            <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/[0.04] rounded-full blur-[30px] pointer-events-none" />
+            
+            <div className="flex items-start justify-between relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-amber-500" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase font-extrabold tracking-[0.15em] text-neutral-400">
+                    Pending Bill
+                  </span>
+                  <span className="text-xs text-neutral-300 mt-0.5">
+                    {customerName} • {selectedTable}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-end">
+                <span className="text-2xl font-black text-amber-500 font-mono tracking-tight">
+                  ₹{totalPendingBill.toLocaleString()}
+                </span>
+                <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider mt-0.5">
+                  Pay at counter
+                </span>
+              </div>
+            </div>
+            
+            <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-transparent mt-3.5 mb-3" />
+            
+            <div className="flex items-center justify-between text-[10px] text-neutral-500 relative z-10">
+              <span className="font-semibold">{orders.filter(o => o.status !== "CANCELLED").length} order(s) placed</span>
+              <span className="font-mono">GST & Service incl.</span>
+            </div>
+          </motion.div>
+        )}
+
         {CATEGORIES.map((category) => {
           let categoryItems = menuItems.filter((item) => item.category === category);
           
@@ -586,6 +651,25 @@ export default function Home() {
       >
         <MessageSquare className="w-5 h-5 fill-neutral-950/10 stroke-[2.5]" />
       </motion.button>
+
+      {/* Floating Games Zone Button — Only visible after placing an order */}
+      <AnimatePresence>
+        {hasActiveOrder && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setGamesOpen(true)}
+            className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 hover:from-violet-600 hover:to-purple-800 text-white flex items-center justify-center shadow-[0_4px_25px_rgba(139,92,246,0.45)] cursor-pointer border border-violet-400/30 active:scale-95 transition-all"
+            title="Games Zone"
+          >
+            <Gamepad2 className="w-6 h-6 stroke-[2.5]" />
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-[#0f0f0e] animate-pulse" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Dynamic Feedback Submission Modal */}
       <FeedbackModal

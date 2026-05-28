@@ -1,20 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useCustomerOrderStore } from "@/store/useCustomerOrderStore";
-import { Utensils, User, ArrowRight, RefreshCw } from "lucide-react";
+import { Utensils, User, ArrowRight, RefreshCw, PartyPopper } from "lucide-react";
 
 export default function TableSelect() {
-  const { selectedTable, setTable, setCustomerName } = useCustomerOrderStore();
+  const { selectedTable, customerName, setTable, setCustomerName } = useCustomerOrderStore();
   const [nameInput, setNameInput] = useState("");
   const [selectedTableLocal, setSelectedTableLocal] = useState<string | null>(null);
+  const [returningUser, setReturningUser] = useState(false);
 
   const tables = Array.from({ length: 12 }, (_, i) => `Table ${i + 1}`);
+
+  // On mount, check if we have a persisted identity from a previous session
+  useEffect(() => {
+    const storeState = useCustomerOrderStore.getState();
+    if (storeState.customerName) {
+      setNameInput(storeState.customerName);
+      setReturningUser(true);
+    }
+    if (storeState.selectedTable && !selectedTable) {
+      setSelectedTableLocal(storeState.selectedTable);
+    }
+  }, [selectedTable]);
 
   const handleProceed = () => {
     const tableToBind = selectedTable || selectedTableLocal;
     if (nameInput.trim() && tableToBind) {
+      const storeState = useCustomerOrderStore.getState();
+      const isReturning =
+        storeState.customerName === nameInput.trim() &&
+        storeState.selectedTable === tableToBind;
+
+      if (!isReturning) {
+        // New customer or different identity — clear old orders
+        useCustomerOrderStore.setState({ orders: [], cart: [] });
+      }
+
       setCustomerName(nameInput.trim());
       if (selectedTableLocal) {
         setTable(selectedTableLocal);
@@ -56,6 +79,25 @@ export default function TableSelect() {
           transition={{ delay: 0.2, duration: 0.5 }}
           className="w-full bg-white/[0.01] border border-white/[0.04] p-6 rounded-3xl backdrop-blur-md shadow-2xl flex flex-col gap-6"
         >
+          {/* Welcome back badge */}
+          {returningUser && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full bg-emerald-500/10 border border-emerald-500/20 p-3.5 rounded-2xl flex items-center gap-2.5"
+            >
+              <PartyPopper className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] uppercase font-extrabold tracking-wider text-emerald-400">
+                  Welcome Back!
+                </span>
+                <span className="text-xs text-neutral-300 mt-0.5">
+                  We found your previous session. Confirm your name below to resume.
+                </span>
+              </div>
+            </motion.div>
+          )}
+
           {/* Section 1: Customer Name Input */}
           <div className="w-full flex flex-col gap-2.5 text-left">
             <label className="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest pl-1 flex items-center gap-1.5">
@@ -67,7 +109,10 @@ export default function TableSelect() {
               required
               placeholder="Enter your name to start..."
               value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
+              onChange={(e) => {
+                setNameInput(e.target.value);
+                if (returningUser) setReturningUser(false);
+              }}
               className="w-full text-xs py-3.5 px-4 rounded-2xl bg-black/40 border border-white/5 text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-amber-500/50 transition-colors shadow-inner"
             />
           </div>
@@ -133,7 +178,7 @@ export default function TableSelect() {
             disabled={!nameInput.trim() || !currentTable}
             className="w-full h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-neutral-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_4px_25px_rgba(245,158,11,0.25)] cursor-pointer select-none transition-all duration-300 disabled:opacity-30 disabled:pointer-events-none"
           >
-            <span>Proceed to Menu</span>
+            <span>{returningUser ? "Resume Session" : "Proceed to Menu"}</span>
             <ArrowRight className="w-4 h-4 stroke-[3]" />
           </motion.button>
         </motion.div>
