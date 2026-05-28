@@ -52,27 +52,7 @@ export default function GameWrapper({
 
   const { addXP, recordGameScore } = useXPStore();
 
-  // Lobby Matchmaking countdown timer
-  useEffect(() => {
-    if (!inLobby) return;
-
-    lobbyTimerRef.current = setInterval(() => {
-      setLobbyTimeLeft((prev) => {
-        if (prev <= 1) {
-          setInLobby(false);
-          clearInterval(lobbyTimerRef.current!);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (lobbyTimerRef.current) clearInterval(lobbyTimerRef.current);
-    };
-  }, [inLobby]);
-
-  // Connect to game socket room
+  // Connect to game socket room and handle server-driven lobby matchmaking
   useEffect(() => {
     let socket: any = null;
 
@@ -105,10 +85,31 @@ export default function GameWrapper({
           }
         };
 
+        // Listen for server matchmaking lobby timer ticks
+        const handleLobbyTimerUpdated = (data: {
+          gameId: string;
+          lobbyTimeLeft: number;
+        }) => {
+          if (data.gameId === gameId) {
+            setLobbyTimeLeft(data.lobbyTimeLeft);
+          }
+        };
+
+        // Listen for server matchmaking game start signal
+        const handleLobbyStart = (data: { gameId: string }) => {
+          if (data.gameId === gameId) {
+            setInLobby(false);
+          }
+        };
+
         socket.on("game-players-updated", handlePlayersUpdated);
+        socket.on("game-lobby-timer-updated", handleLobbyTimerUpdated);
+        socket.on("game-lobby-start", handleLobbyStart);
 
         return () => {
           socket.off("game-players-updated", handlePlayersUpdated);
+          socket.off("game-lobby-timer-updated", handleLobbyTimerUpdated);
+          socket.off("game-lobby-start", handleLobbyStart);
         };
       } catch (err) {
         console.warn("Socket connection for game failed:", err);
@@ -121,6 +122,8 @@ export default function GameWrapper({
       if (socket) {
         socket.emit("leave-game", { gameId });
         socket.off("game-players-updated");
+        socket.off("game-lobby-timer-updated");
+        socket.off("game-lobby-start");
         socket.off("game-action-broadcast");
         socket.off("game-score-broadcast");
       }
