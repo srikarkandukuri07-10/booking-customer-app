@@ -3,8 +3,14 @@ import { NextResponse } from "next/server";
 // Dynamic resolution of backend URL from environment variables, defaulting to localhost:3000
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-// Support both server-side environment variables and client-exposed keys
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+// Support both server-side environment variables and client-exposed keys under multiple names
+const GEMINI_API_KEY = 
+  process.env.GEMINI_API_KEY || 
+  process.env.NEXT_PUBLIC_GEMINI_API_KEY || 
+  process.env.GOOGLE_API_KEY || 
+  process.env.NEXT_PUBLIC_GOOGLE_API_KEY || 
+  process.env.GEMINI_KEY ||
+  process.env.NEXT_PUBLIC_GEMINI_KEY;
 
 export async function POST(request: Request) {
   try {
@@ -95,7 +101,16 @@ Return ONLY the raw JSON string matching this schema. No markdown formatting, no
           const aiData = await aiResponse.json();
           const responseText = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
           if (responseText) {
-            const parsedSuggestions = JSON.parse(responseText.trim());
+            let cleanedText = responseText.trim();
+            
+            // Resiliently strip any Markdown code blocks that Gemini might wrap around the JSON response
+            if (cleanedText.startsWith("```")) {
+              cleanedText = cleanedText.replace(/^```[a-zA-Z]*\n?/, "");
+              cleanedText = cleanedText.replace(/```$/, "");
+              cleanedText = cleanedText.trim();
+            }
+            
+            const parsedSuggestions = JSON.parse(cleanedText);
             if (parsedSuggestions && Array.isArray(parsedSuggestions.suggestions)) {
               console.log("🤖 Real Gemini Suggestions generated successfully!");
               return NextResponse.json({
