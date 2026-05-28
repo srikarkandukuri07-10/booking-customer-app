@@ -3,12 +3,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCustomerOrderStore } from "@/store/useCustomerOrderStore";
-import { ShoppingCart, X, Plus, Minus, FileText, ChevronRight, CheckCircle2, CookingPot, Trash2, AlertTriangle } from "lucide-react";
+import { ShoppingCart, X, Plus, Minus, FileText, ChevronRight, CheckCircle2, CookingPot, Trash2, AlertTriangle, Sparkles } from "lucide-react";
+import { MENU_DATA } from "@/data/menuData";
 
 export default function CartDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [lastPlacedOrderId, setLastPlacedOrderId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const { 
     cart, 
@@ -18,18 +21,44 @@ export default function CartDrawer() {
     submitOrder, 
     isSubmitting,
     submitError,
-    orders 
+    orders,
+    addToCart
   } = useCustomerOrderStore();
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = cart.reduce((sum, item) => sum + item.item.price * item.quantity, 0);
 
   const handlePlaceOrder = async () => {
+    const cartSnapshot = [...cart];
+    setLoadingSuggestions(true);
+    setSuggestions([]);
+
     const response = await submitOrder();
     
     if (response.success) {
       setLastPlacedOrderId(response.orderId || null);
       setOrderComplete(true);
+
+      // Fetch dynamic AI food suggestions
+      try {
+        const suggRes = await fetch("/api/suggestions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ orderedItems: cartSnapshot })
+        });
+        const suggData = await suggRes.json();
+        if (suggData.success && suggData.suggestions) {
+          setSuggestions(suggData.suggestions);
+        }
+      } catch (err) {
+        console.warn("⚠️ Failed to load AI recommendations:", err);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    } else {
+      setLoadingSuggestions(false);
     }
   };
 
@@ -37,6 +66,7 @@ export default function CartDrawer() {
     setOrderComplete(false);
     setIsOpen(false);
     setLastPlacedOrderId(null);
+    setSuggestions([]);
   };
 
   return (
@@ -129,7 +159,7 @@ export default function CartDrawer() {
                     {selectedTable}
                   </span>
 
-                  <div className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-left text-xs mb-8 text-neutral-400 font-mono flex flex-col gap-2">
+                  <div className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-left text-xs mb-4 text-neutral-400 font-mono flex flex-col gap-2 flex-shrink-0">
                     <div className="flex justify-between">
                       <span>Order Reference:</span>
                       <span className="text-neutral-200 font-semibold">{lastPlacedOrderId || "ORD-N/A"}</span>
@@ -142,9 +172,60 @@ export default function CartDrawer() {
                     </div>
                   </div>
 
+                  {/* AI Recommendations section */}
+                  {loadingSuggestions ? (
+                    <div className="w-full flex flex-col gap-3 mb-6 mt-2 flex-shrink-0">
+                      <div className="h-4 bg-white/5 rounded w-1/2 animate-pulse" />
+                      <div className="h-20 bg-white/5 rounded-2xl animate-pulse" />
+                    </div>
+                  ) : suggestions.length > 0 ? (
+                    <div className="w-full flex flex-col gap-3 mb-6 text-left border-t border-white/5 pt-4 overflow-y-auto pr-1 no-scrollbar flex-1">
+                      <h4 className="text-xs font-bold text-amber-500 uppercase tracking-widest flex items-center gap-1.5 flex-shrink-0">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500 animate-pulse" />
+                        Chef's AI Recommendations
+                      </h4>
+                      
+                      <div className="flex flex-col gap-2.5">
+                        {suggestions.map((sug) => {
+                          const item = MENU_DATA.find(m => m.id === sug.itemId);
+                          if (!item) return null;
+                          
+                          return (
+                            <div key={sug.itemId} className="bg-white/[0.02] border border-white/[0.04] p-3 rounded-2xl flex gap-3 items-start hover:border-amber-500/20 transition-all duration-300">
+                              {/* Suggestion Item Image */}
+                              <div className="w-12 h-12 rounded-lg overflow-hidden bg-neutral-800 flex-shrink-0">
+                                <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                              </div>
+                              
+                              <div className="flex-grow flex flex-col gap-0.5 min-w-0">
+                                <div className="flex justify-between items-baseline gap-1">
+                                  <h5 className="text-xs font-bold text-neutral-200 truncate">{item.name}</h5>
+                                  <span className="text-xs font-bold text-amber-500 font-mono">₹{item.price}</span>
+                                </div>
+                                <p className="text-[10px] text-neutral-400 leading-normal italic mt-0.5">
+                                  "{sug.reason}"
+                                </p>
+                                
+                                <button
+                                  onClick={() => {
+                                    addToCart(item, 1, "AI Recommended Pairing");
+                                    handleCloseComplete();
+                                  }}
+                                  className="mt-2 text-[9px] font-extrabold uppercase bg-amber-500 text-neutral-950 px-2.5 py-1.5 rounded-lg w-fit flex items-center gap-1 cursor-pointer hover:bg-amber-600 transition-colors shadow-sm shadow-amber-500/10 active:scale-95 duration-200"
+                                >
+                                  <Plus className="w-2.5 h-2.5 stroke-[3]" /> Add to Next Order
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+
                   <button
                     onClick={handleCloseComplete}
-                    className="w-full h-12 bg-white text-neutral-900 rounded-xl font-bold text-xs tracking-wider uppercase cursor-pointer hover:bg-neutral-100 transition-colors"
+                    className="w-full h-12 bg-white text-neutral-900 rounded-xl font-bold text-xs tracking-wider uppercase cursor-pointer hover:bg-neutral-100 transition-colors flex-shrink-0 mt-auto"
                   >
                     Done & Back to Menu
                   </button>
