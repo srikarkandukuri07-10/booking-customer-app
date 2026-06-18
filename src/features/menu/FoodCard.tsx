@@ -143,9 +143,10 @@ export default function FoodCard({ item }: FoodCardProps) {
             View Ingredients
           </button>
 
-          {item.has3dView && (
-            <Food3DButton onClick={() => setShow3D(true)} />
-          )}
+          <Food3DButton 
+            has3dView={!!item.has3dView} 
+            onClick={() => setShow3D(true)} 
+          />
         </div>
 
         {/* Real-time Reaction Details Grid (Expandable) */}
