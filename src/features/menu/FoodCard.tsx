@@ -4,7 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MenuItem } from "@/types";
 import { useCustomerOrderStore } from "@/store/useCustomerOrderStore";
-import { Plus, Minus, MessageSquareText, ThumbsUp, Star, Smile, Heart, Check } from "lucide-react";
+import { Plus, Minus, MessageSquareText, ThumbsUp, Star, Smile, Heart, Check, X } from "lucide-react";
+import { INGREDIENTS_MAP } from "@/data/menuData";
 
 interface FoodCardProps {
   item: MenuItem;
@@ -17,6 +18,7 @@ export default function FoodCard({ item }: FoodCardProps) {
   const [quantity, setQuantity] = useState(1);
   const [showFeedbackDetails, setShowFeedbackDetails] = useState(false);
   const [isAddedAnimation, setIsAddedAnimation] = useState(false);
+  const [showIngredients, setShowIngredients] = useState(false);
 
   // Calculate total quantity of this specific item in the cart (regardless of instructions)
   const totalInCart = cart
@@ -126,9 +128,18 @@ export default function FoodCard({ item }: FoodCardProps) {
           </span>
         </div>
 
-        <p className="text-neutral-400 text-xs line-clamp-2 leading-relaxed mb-4">
+        <p className="text-neutral-400 text-xs line-clamp-2 leading-relaxed mb-3">
           {item.description}
         </p>
+
+        <div className="mb-4">
+          <button
+            onClick={() => setShowIngredients(true)}
+            className="text-[10px] text-amber-500 hover:text-amber-400 font-bold tracking-wide flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-full transition-colors border border-amber-500/20"
+          >
+            View Ingredients
+          </button>
+        </div>
 
         {/* Real-time Reaction Details Grid (Expandable) */}
         <AnimatePresence>
@@ -248,6 +259,49 @@ export default function FoodCard({ item }: FoodCardProps) {
           </button>
         </div>
       </div>
+
+      {/* Ingredients Overlay Box */}
+      <AnimatePresence>
+        {showIngredients && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-[#121211]/95 backdrop-blur-md z-30 p-4 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="text-sm font-bold text-amber-500 uppercase tracking-wider font-serif">
+                  Ingredients
+                </h4>
+                <button
+                  onClick={() => setShowIngredients(false)}
+                  className="p-1 rounded-full bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-neutral-200 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-[10px] text-neutral-400 mb-3 italic">
+                Ingredients used in {item.name}:
+              </p>
+              <div className="flex flex-wrap gap-1.5 max-h-[170px] overflow-y-auto pr-1">
+                {(item.ingredients || INGREDIENTS_MAP[item.id] || INGREDIENTS_MAP[item.name] || ["Fresh ingredients", "Spices", "Chef's secret recipe"]).map((ing, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-white/5 border border-white/10 text-neutral-200 text-[10px] px-2.5 py-1 rounded-lg"
+                  >
+                    {ing}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="text-[9px] text-neutral-500 mt-2 text-center border-t border-white/5 pt-2">
+              *Please inform us of any severe allergies before ordering.
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

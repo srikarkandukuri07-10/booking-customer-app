@@ -123,7 +123,8 @@ export default function Home() {
               availability: item.availability !== undefined ? item.availability : true,
               description: item.description,
               feedback: item.feedback || { mustTry: 10, veryTasty: 10, good: 10, ok: 1 },
-              feedbackStats: item.feedbackStats || null // Map dynamic feedback statistics from database!
+              feedbackStats: item.feedbackStats || null, // Map dynamic feedback statistics from database!
+              ingredients: item.ingredients || undefined
             });
           });
         });

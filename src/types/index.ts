@@ -15,6 +15,7 @@ export interface MenuItem {
   description: string;
   feedback: MenuFeedback;
   availability?: boolean;
+  ingredients?: string[];
 }
 
 export interface CartItem {
