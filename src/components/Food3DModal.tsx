@@ -11,9 +11,18 @@ const ModelViewer = dynamic(() => import("./ModelViewer"), { ssr: false });
 
 const CUSTOM_3D_FALLBACKS: Record<string, string> = {
   "start_01": "/images/3d/paneer-tikka-3d.png",
+  "start_02": "/images/3d/chicken-65-3d.png",
+  "start_03": "/images/3d/crispy-corn-3d.png",
   "main_01": "/images/3d/butter-chicken-3d.png",
+  "main_02": "/images/3d/kadai-paneer-3d.png",
+  "main_03": "/images/3d/dal-makhani-3d.png",
   "biry_01": "/images/3d/chicken-biryani-3d.png",
+  "biry_02": "/images/3d/paneer-biryani-3d.png",
+  "dess_01": "/images/3d/gulab-jamun-3d.png",
   "dess_02": "/images/3d/sizzling-brownie-3d.png",
+  "drin_01": "/images/3d/masala-shikanji-3d.png",
+  "drin_02": "/images/3d/virgin-mojito-3d.png",
+  "drin_03": "/images/3d/mango-lassi-3d.png",
 };
 
 interface Food3DModalProps {
