@@ -18,7 +18,7 @@ interface GameWrapperProps {
   tableName: string;
   onExit: () => void;
   latestOrder: any;
-  currentTokenRunning: number;
+
 }
 
 interface GamePlayer {
@@ -36,7 +36,7 @@ export default function GameWrapper({
   tableName,
   onExit,
   latestOrder,
-  currentTokenRunning,
+
 }: GameWrapperProps) {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [score, setScore] = useState(0);
@@ -45,54 +45,87 @@ export default function GameWrapper({
   const [realPlayers, setRealPlayers] = useState<GamePlayer[]>([]);
   const [inLobby, setInLobby] = useState(true);
   const [lobbyTimeLeft, setLobbyTimeLeft] = useState(40);
+  const [lobbyId, setLobbyId] = useState<string | null>(null);
+  const [isSocketReady, setIsSocketReady] = useState(false);
   const socketRef = useRef<any>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const lobbyTimerRef = useRef<NodeJS.Timeout | null>(null);
   const gameKeyRef = useRef(Date.now()); // Unique key to force game remount on re-entry
+  const lobbyIdRef = useRef<string | null>(null);
 
   const { addXP, recordGameScore } = useXPStore();
 
-  // Local fallback matchmaking countdown timer (guarantees timer never gets stuck)
+  // Keep ref in sync to avoid tearing down socket connection on state changes
   useEffect(() => {
-    if (!inLobby) return;
+    lobbyIdRef.current = lobbyId;
+  }, [lobbyId]);
 
-    const interval = setInterval(() => {
-      setLobbyTimeLeft((prev) => {
-        if (prev <= 1) {
-          setInLobby(false);
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  // Local fallback matchmaking countdown timer (guarantees timer never gets stuck if offline)
+  useEffect(() => {
+    if (!inLobby || isSocketReady) return;
 
-    return () => clearInterval(interval);
-  }, [inLobby]);
+    // Start a 4-second delay before starting the local fallback countdown
+    // This gives the socket ample time to connect and establish the server lobby!
+    const graceTimeout = setTimeout(() => {
+      console.warn("⚠️ Matchmaking: Server socket unavailable. Running local fallback matchmaking.");
+      const interval = setInterval(() => {
+        setLobbyTimeLeft((prev) => {
+          if (prev <= 1) {
+            setInLobby(false);
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      lobbyTimerRef.current = interval;
+    }, 4000);
+
+    return () => {
+      clearTimeout(graceTimeout);
+      if (lobbyTimerRef.current) {
+        clearInterval(lobbyTimerRef.current);
+      }
+    };
+  }, [inLobby, isSocketReady]);
 
   // Connect to game socket room and handle server-driven lobby matchmaking
   useEffect(() => {
+    let activeSocket: any = null;
+
     const setupSocket = async () => {
       try {
         const socketModule = await import("@/lib/socket");
         const socket = socketModule.socket;
         socketModule.connectSocket();
+        activeSocket = socket;
         socketRef.current = socket;
 
-        // Join the game room
-        socket.emit("join-game", {
-          gameId,
-          playerName: customerName,
-          tableName,
-        });
+        // Function to join/re-join the game lobby room on connect or mount
+        const joinRoom = () => {
+          if (socket.connected) {
+            console.log("🎮 Socket.IO: Emitting join-game...", socket.id);
+            socket.emit("join-game", {
+              gameId,
+              playerName: customerName,
+              tableName,
+            });
+          }
+        };
 
         // Listen for player updates
         const handlePlayersUpdated = (data: {
+          lobbyId: string;
           gameId: string;
           players: GamePlayer[];
         }) => {
-          if (data.gameId === gameId) {
-            // Filter out self
+          const currentLobbyId = lobbyIdRef.current;
+          const matches = currentLobbyId 
+            ? data.lobbyId === currentLobbyId 
+            : data.gameId === gameId;
+
+          if (matches) {
             setRealPlayers(
               data.players.filter(
                 (p: GamePlayer) => p.socketId !== socket.id
@@ -103,30 +136,85 @@ export default function GameWrapper({
 
         // Listen for server matchmaking lobby timer ticks
         const handleLobbyTimerUpdated = (data: {
+          lobbyId: string;
           gameId: string;
           lobbyTimeLeft: number;
         }) => {
-          if (data.gameId === gameId) {
+          const currentLobbyId = lobbyIdRef.current;
+          const matches = currentLobbyId 
+            ? data.lobbyId === currentLobbyId 
+            : data.gameId === gameId;
+
+          if (matches) {
             setLobbyTimeLeft(data.lobbyTimeLeft);
           }
         };
 
         // Listen for server matchmaking game start signal
-        const handleLobbyStart = (data: { gameId: string }) => {
-          if (data.gameId === gameId) {
+        const handleLobbyStart = (data: { lobbyId: string; gameId: string }) => {
+          const currentLobbyId = lobbyIdRef.current;
+          const matches = currentLobbyId 
+            ? data.lobbyId === currentLobbyId 
+            : data.gameId === gameId;
+
+          if (matches) {
             setInLobby(false);
           }
         };
 
+        // Listen for our personal joined-lobby assignment
+        const handleJoinedLobby = (data: {
+          lobbyId: string;
+          gameId: string;
+          lobbyTimeLeft: number;
+          players: GamePlayer[];
+        }) => {
+          if (data.gameId === gameId) {
+            console.log("🎮 Socket.IO: Successfully joined lobby", data.lobbyId);
+            setLobbyId(data.lobbyId);
+            setLobbyTimeLeft(data.lobbyTimeLeft);
+            setRealPlayers(
+              data.players.filter(
+                (p: GamePlayer) => p.socketId !== socket.id
+              )
+            );
+            setIsSocketReady(true);
+          }
+        };
+
+        const handleConnectError = (err: any) => {
+          console.error("❌ Socket.IO Connection error:", err);
+          setIsSocketReady(false);
+        };
+
+        const handleDisconnect = (reason: string) => {
+          console.warn("🔌 Socket.IO Disconnected:", reason);
+          setIsSocketReady(false);
+        };
+
+        // Bind lifecycle/connection events for robust auto-reconnect joining!
+        socket.on("connect", joinRoom);
+        socket.on("connect_error", handleConnectError);
+        socket.on("disconnect", handleDisconnect);
+        socket.on("joined-lobby", handleJoinedLobby);
         socket.on("game-players-updated", handlePlayersUpdated);
         socket.on("game-lobby-timer-updated", handleLobbyTimerUpdated);
         socket.on("game-lobby-start", handleLobbyStart);
 
-        return () => {
+        // Run join immediately if already connected
+        joinRoom();
+
+        // Save cleanup callbacks on the socket object
+        (socket as any)._gameListenersCleanup = () => {
+          socket.off("connect", joinRoom);
+          socket.off("connect_error", handleConnectError);
+          socket.off("disconnect", handleDisconnect);
+          socket.off("joined-lobby", handleJoinedLobby);
           socket.off("game-players-updated", handlePlayersUpdated);
           socket.off("game-lobby-timer-updated", handleLobbyTimerUpdated);
           socket.off("game-lobby-start", handleLobbyStart);
         };
+
       } catch (err) {
         console.warn("Socket connection for game failed:", err);
       }
@@ -135,12 +223,17 @@ export default function GameWrapper({
     setupSocket();
 
     return () => {
-      const activeSocket = socketRef.current;
       if (activeSocket) {
-        activeSocket.emit("leave-game", { gameId });
-        activeSocket.off("game-players-updated");
-        activeSocket.off("game-lobby-timer-updated");
-        activeSocket.off("game-lobby-start");
+        // Emit leave game with the active lobbyId if we have one
+        activeSocket.emit("leave-game", { 
+          lobbyId: lobbyIdRef.current || undefined, 
+          gameId 
+        });
+
+        // Clean up listeners
+        if (typeof (activeSocket as any)._gameListenersCleanup === "function") {
+          (activeSocket as any)._gameListenersCleanup();
+        }
         activeSocket.off("game-action-broadcast");
         activeSocket.off("game-score-broadcast");
       }
@@ -193,6 +286,7 @@ export default function GameWrapper({
       // Broadcast score to other players
       if (socketRef.current) {
         socketRef.current.emit("game-score-update", {
+          lobbyId: lobbyIdRef.current || undefined,
           gameId,
           playerName: customerName,
           score: newScore,
@@ -205,7 +299,11 @@ export default function GameWrapper({
   const handleGameAction = useCallback(
     (action: any) => {
       if (socketRef.current) {
-        socketRef.current.emit("game-action", { gameId, action });
+        socketRef.current.emit("game-action", {
+          lobbyId: lobbyIdRef.current || undefined,
+          gameId,
+          action,
+        });
       }
     },
     [gameId]
@@ -316,7 +414,16 @@ export default function GameWrapper({
             <span className="text-[10px] bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full text-violet-400 font-bold uppercase tracking-widest animate-pulse">
               🎮 Matchmaking Lobby
             </span>
-            <h2 className="text-3xl font-black font-serif text-white mt-4 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+            
+            {/* Real-time Socket status indicator */}
+            <div className="flex items-center gap-1.5 mt-2.5 bg-black/35 px-2.5 py-1 rounded-full border border-white/[0.03]">
+              <span className={`w-1.5 h-1.5 rounded-full ${isSocketReady ? "bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" : "bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]"}`} />
+              <span className={`text-[8px] font-bold tracking-widest uppercase font-mono ${isSocketReady ? "text-emerald-400" : "text-rose-400 animate-pulse"}`}>
+                {isSocketReady ? "Connected to Arena Server" : "Lobby Server Offline"}
+              </span>
+            </div>
+
+            <h2 className="text-3xl font-black font-serif text-white mt-3.5 drop-shadow-[0_0_15px_rgba(139,92,246,0.3)]">
               {gameName}
             </h2>
             <p className="text-neutral-400 text-xs mt-2 max-w-xs leading-normal">

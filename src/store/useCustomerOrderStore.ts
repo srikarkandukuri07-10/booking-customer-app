@@ -118,7 +118,7 @@ export const useCustomerOrderStore = create<CustomerOrderStore>()(
           if (response.success) {
             const orderId = (response as any).order?.id || response.orderId || `ord_${Date.now()}`;
             const orderStatus = (response as any).order?.status || "PENDING";
-            const tokenNumber = (response as any).order?.tokenNumber || null;
+
             
             // Append placed order to simulated local order history for UI feedback
             const placedOrder: OrderPayload = {
@@ -128,7 +128,6 @@ export const useCustomerOrderStore = create<CustomerOrderStore>()(
               totalAmount,
               timestamp: new Date().toISOString(),
               status: orderStatus,
-              tokenNumber: tokenNumber
             };
 
             set((state) => ({

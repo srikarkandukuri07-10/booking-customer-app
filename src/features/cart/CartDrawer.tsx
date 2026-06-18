@@ -159,38 +159,11 @@ export default function CartDrawer() {
                     {selectedTable}
                   </span>
 
-                  {/* MASSIVE CHECKOUT SUCCESS TOKEN DISPLAY */}
-                  {orders[0]?.tokenNumber && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.1 }}
-                      className="w-full bg-amber-500/10 border-2 border-amber-500/20 p-5 rounded-3xl flex flex-col items-center justify-center mb-5 shadow-[0_10px_30px_rgba(245,158,11,0.15)] relative overflow-hidden"
-                    >
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-amber-500/10 rounded-full blur-[25px]" />
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 mb-1 z-10">
-                        YOUR QUEUE TOKEN
-                      </span>
-                      <h2 className="text-6xl font-black text-white font-mono drop-shadow-[0_0_15px_rgba(245,158,11,0.3)] z-10 flex items-baseline">
-                        <span className="text-amber-500 text-2xl font-bold mr-1 font-serif">#</span>
-                        {orders[0]?.tokenNumber}
-                      </h2>
-                      <span className="text-[9px] text-neutral-400 mt-2 font-black uppercase tracking-wider z-10">
-                        Please remember this number for collection!
-                      </span>
-                    </motion.div>
-                  )}
 
                   <div className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-left text-xs mb-4 text-neutral-400 font-mono flex flex-col gap-2.5 flex-shrink-0">
                     <div className="flex justify-between items-center">
                       <span>Order Reference:</span>
                       <span className="text-neutral-200 font-semibold">{lastPlacedOrderId || "ORD-N/A"}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Queue Token Number:</span>
-                      <span className="text-amber-500 font-black text-sm">
-                        #{orders[0]?.tokenNumber || "N/A"}
-                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Status:</span>

@@ -23,7 +23,6 @@ interface GamesZoneProps {
   customerName: string;
   tableName: string;
   totalSpent: number;
-  currentTokenRunning: number;
   latestOrder: any;
 }
 
@@ -92,7 +91,6 @@ export default function GamesZone({
   customerName,
   tableName,
   totalSpent,
-  currentTokenRunning,
   latestOrder,
 }: GamesZoneProps) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
@@ -123,7 +121,7 @@ export default function GamesZone({
         tableName={tableName}
         onExit={handleGameExit}
         latestOrder={latestOrder}
-        currentTokenRunning={currentTokenRunning}
+
       />
     );
   }

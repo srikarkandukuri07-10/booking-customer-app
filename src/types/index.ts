@@ -30,5 +30,4 @@ export interface OrderPayload {
   totalAmount: number;
   timestamp: string;
   status: 'PENDING' | 'PREPARING' | 'READY' | 'SERVED';
-  tokenNumber?: number | null;
 }
