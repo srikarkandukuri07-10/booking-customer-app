@@ -25,6 +25,43 @@ const CUSTOM_3D_FALLBACKS: Record<string, string> = {
   "drin_03": "/images/3d/mango-lassi-3d.png",
 };
 
+// Helper function to resolve fallback image by ID or normalized name
+const getFallbackImage = (item: MenuItem): string | undefined => {
+  // 1. Try matching by ID
+  if (CUSTOM_3D_FALLBACKS[item.id]) {
+    return CUSTOM_3D_FALLBACKS[item.id];
+  }
+
+  // 2. Try matching by normalized name
+  if (item.name) {
+    const normalized = item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    
+    // Map of name keywords to their corresponding 3D image file basenames
+    const matchedFile = [
+      "butter-chicken",
+      "chicken-65",
+      "chicken-biryani",
+      "crispy-corn",
+      "dal-makhani",
+      "gulab-jamun",
+      "kadai-paneer",
+      "mango-lassi",
+      "masala-shikanji",
+      "paneer-biryani",
+      "paneer-tikka",
+      "sizzling-brownie",
+      "virgin-mojito"
+    ].find(name => normalized.includes(name));
+
+    if (matchedFile) {
+      return `/images/3d/${matchedFile}-3d.png`;
+    }
+  }
+
+  // 3. Default fallback to standard 2D image
+  return item.image || undefined;
+};
+
 interface Food3DModalProps {
   item: MenuItem;
   isOpen: boolean;
@@ -55,7 +92,7 @@ export default function Food3DModal({ item, isOpen, onClose }: Food3DModalProps)
 
   if (!isOpen) return null;
 
-  const fallbackImg = CUSTOM_3D_FALLBACKS[item.id] || item.image || undefined;
+  const fallbackImg = getFallbackImage(item);
 
   return (
     <div
@@ -92,22 +129,11 @@ export default function Food3DModal({ item, isOpen, onClose }: Food3DModalProps)
 
         {/* 3D viewport wrapper */}
         <div className="flex-grow relative p-4 min-h-[300px]">
-          {item.model3dUrl ? (
-            <ModelViewer
-              key={resetKey}
-              url={item.model3dUrl}
-              fallbackImage={fallbackImg}
-            />
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center select-none bg-neutral-950 rounded-2xl border border-white/5 m-4">
-              <span className="text-red-400 font-black uppercase tracking-widest text-[10px] bg-red-950/20 px-3 py-1.5 rounded-full border border-red-500/20">
-                3D preview unavailable
-              </span>
-              <p className="text-[10px] text-neutral-500 mt-2 font-medium">
-                No 3D model url provided for this food item.
-              </p>
-            </div>
-          )}
+          <ModelViewer
+            key={resetKey}
+            url={item.model3dUrl || ""}
+            fallbackImage={fallbackImg}
+          />
 
           {/* User interaction HUD overlay */}
           <div className="absolute bottom-6 left-6 bg-black/75 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 pointer-events-none select-none text-[9px] text-neutral-400 font-semibold shadow-lg">

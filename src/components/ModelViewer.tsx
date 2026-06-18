@@ -108,6 +108,10 @@ function Fallback3DViewer({ fallbackImage }: { fallbackImage?: string }) {
 export default function ModelViewer({ url, fallbackImage }: { url: string; fallbackImage?: string }) {
   const fallbackUI = <Fallback3DViewer fallbackImage={fallbackImage} />;
 
+  if (!url) {
+    return fallbackUI;
+  }
+
   return (
     <div className="relative w-full h-full bg-neutral-950 rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
       <ErrorBoundary fallback={fallbackUI}>
