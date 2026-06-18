@@ -42,7 +42,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 45, veryTasty: 35, good: 15, ok: 5 },
     ingredients: INGREDIENTS_MAP["start_01"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/paneer-tikka.glb"
   },
   {
     id: "start_02",
@@ -55,7 +55,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 60, veryTasty: 25, good: 12, ok: 3 },
     ingredients: INGREDIENTS_MAP["start_02"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/chicken-65.glb"
   },
   {
     id: "start_03",
@@ -68,7 +68,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 30, veryTasty: 40, good: 20, ok: 10 },
     ingredients: INGREDIENTS_MAP["start_03"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/crispy-corn.glb"
   },
 
   // --- MAIN COURSE ---
@@ -83,7 +83,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 75, veryTasty: 18, good: 5, ok: 2 },
     ingredients: INGREDIENTS_MAP["main_01"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/butter-chicken.glb"
   },
   {
     id: "main_02",
@@ -96,7 +96,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 40, veryTasty: 40, good: 15, ok: 5 },
     ingredients: INGREDIENTS_MAP["main_02"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/kadai-paneer.glb"
   },
   {
     id: "main_03",
@@ -109,7 +109,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 50, veryTasty: 35, good: 10, ok: 5 },
     ingredients: INGREDIENTS_MAP["main_03"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/dal-makhani.glb"
   },
 
   // --- BIRYANI ---
@@ -124,7 +124,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 80, veryTasty: 15, good: 4, ok: 1 },
     ingredients: INGREDIENTS_MAP["biry_01"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/chicken-biryani.glb"
   },
   {
     id: "biry_02",
@@ -137,7 +137,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 45, veryTasty: 35, good: 15, ok: 5 },
     ingredients: INGREDIENTS_MAP["biry_02"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/paneer-biryani.glb"
   },
 
   // --- DESSERTS ---
@@ -152,7 +152,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 55, veryTasty: 30, good: 10, ok: 5 },
     ingredients: INGREDIENTS_MAP["dess_01"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/gulab-jamun.glb"
   },
   {
     id: "dess_02",
@@ -165,7 +165,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 70, veryTasty: 20, good: 8, ok: 2 },
     ingredients: INGREDIENTS_MAP["dess_02"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/sizzling-brownie.glb"
   },
 
   // --- DRINKS ---
@@ -180,7 +180,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 30, veryTasty: 45, good: 20, ok: 5 },
     ingredients: INGREDIENTS_MAP["drin_01"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/masala-shikanji.glb"
   },
   {
     id: "drin_02",
@@ -193,7 +193,7 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 40, veryTasty: 38, good: 17, ok: 5 },
     ingredients: INGREDIENTS_MAP["drin_02"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/virgin-mojito.glb"
   },
   {
     id: "drin_03",
@@ -206,6 +206,6 @@ export const MENU_DATA: MenuItem[] = [
     feedback: { mustTry: 50, veryTasty: 35, good: 10, ok: 5 },
     ingredients: INGREDIENTS_MAP["drin_03"],
     has3dView: true,
-    model3dUrl: null
+    model3dUrl: "/models/mango-lassi.glb"
   }
 ];
