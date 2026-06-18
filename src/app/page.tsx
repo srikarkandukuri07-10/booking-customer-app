@@ -124,7 +124,11 @@ export default function Home() {
               description: item.description,
               feedback: item.feedback || { mustTry: 10, veryTasty: 10, good: 10, ok: 1 },
               feedbackStats: item.feedbackStats || null, // Map dynamic feedback statistics from database!
-              ingredients: item.ingredients || undefined
+              ingredients: item.ingredients || undefined,
+              has3dView: item.has3dView || false,
+              model3dUrl: item.model3dUrl || null,
+              captureVideoUrl: item.captureVideoUrl || null,
+              captureStatus: item.captureStatus || 'none'
             });
           });
         });

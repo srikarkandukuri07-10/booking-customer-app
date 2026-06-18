@@ -40,7 +40,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: true,
     description: "Cottage cheese cubes marinated in rich Indian spices and grilled to perfection in a tandoor.",
     feedback: { mustTry: 45, veryTasty: 35, good: 15, ok: 5 },
-    ingredients: INGREDIENTS_MAP["start_01"]
+    ingredients: INGREDIENTS_MAP["start_01"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
   {
     id: "start_02",
@@ -51,7 +53,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: false,
     description: "Spicy, deep-fried chicken cubes tempered with aromatic curry leaves and fiery green chilies.",
     feedback: { mustTry: 60, veryTasty: 25, good: 12, ok: 3 },
-    ingredients: INGREDIENTS_MAP["start_02"]
+    ingredients: INGREDIENTS_MAP["start_02"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
   {
     id: "start_03",
@@ -62,7 +66,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: true,
     description: "Deep fried golden corn kernels tossed with spices, chopped onions, and colorful bell peppers.",
     feedback: { mustTry: 30, veryTasty: 40, good: 20, ok: 10 },
-    ingredients: INGREDIENTS_MAP["start_03"]
+    ingredients: INGREDIENTS_MAP["start_03"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
 
   // --- MAIN COURSE ---
@@ -75,7 +81,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: false,
     description: "Tender tandoori chicken pieces cooked in a rich, creamy tomato and butter gravy.",
     feedback: { mustTry: 75, veryTasty: 18, good: 5, ok: 2 },
-    ingredients: INGREDIENTS_MAP["main_01"]
+    ingredients: INGREDIENTS_MAP["main_01"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
   {
     id: "main_02",
@@ -86,7 +94,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: true,
     description: "Cottage cheese cooked in a spicy tomato-onion gravy with crisp bell peppers and freshly ground spices.",
     feedback: { mustTry: 40, veryTasty: 40, good: 15, ok: 5 },
-    ingredients: INGREDIENTS_MAP["main_02"]
+    ingredients: INGREDIENTS_MAP["main_02"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
   {
     id: "main_03",
@@ -97,7 +107,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: true,
     description: "Creamy black lentils and kidney beans slow cooked overnight with butter, rich cream, and mild spices.",
     feedback: { mustTry: 50, veryTasty: 35, good: 10, ok: 5 },
-    ingredients: INGREDIENTS_MAP["main_03"]
+    ingredients: INGREDIENTS_MAP["main_03"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
 
   // --- BIRYANI ---
@@ -110,7 +122,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: false,
     description: "Premium basmati rice slow-cooked on dum with marinated chicken, real saffron, and aromatic spices.",
     feedback: { mustTry: 80, veryTasty: 15, good: 4, ok: 1 },
-    ingredients: INGREDIENTS_MAP["biry_01"]
+    ingredients: INGREDIENTS_MAP["biry_01"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
   {
     id: "biry_02",
@@ -121,7 +135,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: true,
     description: "Fragrant, saffron-infused basmati rice layered with spiced cottage cheese cubes and fresh mint.",
     feedback: { mustTry: 45, veryTasty: 35, good: 15, ok: 5 },
-    ingredients: INGREDIENTS_MAP["biry_02"]
+    ingredients: INGREDIENTS_MAP["biry_02"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
 
   // --- DESSERTS ---
@@ -134,7 +150,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: true,
     description: "Deep fried golden milk dumplings soaked in a warm, sweet sugar syrup flavored with cardamom.",
     feedback: { mustTry: 55, veryTasty: 30, good: 10, ok: 5 },
-    ingredients: INGREDIENTS_MAP["dess_01"]
+    ingredients: INGREDIENTS_MAP["dess_01"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
   {
     id: "dess_02",
@@ -145,7 +163,9 @@ export const MENU_DATA: MenuItem[] = [
     veg: true,
     description: "Hot chocolate fudge brownie served on a sizzling hot plate with vanilla ice cream and warm chocolate sauce.",
     feedback: { mustTry: 70, veryTasty: 20, good: 8, ok: 2 },
-    ingredients: INGREDIENTS_MAP["dess_02"]
+    ingredients: INGREDIENTS_MAP["dess_02"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
 
   // --- DRINKS ---
@@ -158,18 +178,22 @@ export const MENU_DATA: MenuItem[] = [
     veg: true,
     description: "Traditional refreshing lemonade spiced with a roasted cumin blend and black salt.",
     feedback: { mustTry: 30, veryTasty: 45, good: 20, ok: 5 },
-    ingredients: INGREDIENTS_MAP["drin_01"]
+    ingredients: INGREDIENTS_MAP["drin_01"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
   {
     id: "drin_02",
     name: "Virgin Mojito",
     category: "Drinks",
     price: 119,
-    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=600", // Fallback fresh drink
+    image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=600",
     veg: true,
     description: "Refreshing carbonated mocktail muddled with fresh mint leaves, lime juice, and simple syrup.",
     feedback: { mustTry: 40, veryTasty: 38, good: 17, ok: 5 },
-    ingredients: INGREDIENTS_MAP["drin_02"]
+    ingredients: INGREDIENTS_MAP["drin_02"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   },
   {
     id: "drin_03",
@@ -180,6 +204,8 @@ export const MENU_DATA: MenuItem[] = [
     veg: true,
     description: "Traditional rich sweet yogurt drink blended beautifully with fresh sweet Alphonso mango pulp.",
     feedback: { mustTry: 50, veryTasty: 35, good: 10, ok: 5 },
-    ingredients: INGREDIENTS_MAP["drin_03"]
+    ingredients: INGREDIENTS_MAP["drin_03"],
+    has3dView: true,
+    model3dUrl: "/models/default-food.glb"
   }
 ];

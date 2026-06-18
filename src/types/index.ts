@@ -16,6 +16,10 @@ export interface MenuItem {
   feedback: MenuFeedback;
   availability?: boolean;
   ingredients?: string[];
+  has3dView?: boolean;
+  model3dUrl?: string | null;
+  captureVideoUrl?: string | null;
+  captureStatus?: string;
 }
 
 export interface CartItem {

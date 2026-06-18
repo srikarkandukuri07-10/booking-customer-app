@@ -6,6 +6,8 @@ import { MenuItem } from "@/types";
 import { useCustomerOrderStore } from "@/store/useCustomerOrderStore";
 import { Plus, Minus, MessageSquareText, ThumbsUp, Star, Smile, Heart, Check, X } from "lucide-react";
 import { INGREDIENTS_MAP } from "@/data/menuData";
+import Food3DButton from "@/components/Food3DButton";
+import Food3DModal from "@/components/Food3DModal";
 
 interface FoodCardProps {
   item: MenuItem;
@@ -19,6 +21,7 @@ export default function FoodCard({ item }: FoodCardProps) {
   const [showFeedbackDetails, setShowFeedbackDetails] = useState(false);
   const [isAddedAnimation, setIsAddedAnimation] = useState(false);
   const [showIngredients, setShowIngredients] = useState(false);
+  const [show3D, setShow3D] = useState(false);
 
   // Calculate total quantity of this specific item in the cart (regardless of instructions)
   const totalInCart = cart
@@ -132,13 +135,17 @@ export default function FoodCard({ item }: FoodCardProps) {
           {item.description}
         </p>
 
-        <div className="mb-4">
+        <div className="flex justify-between items-center mb-4 gap-2">
           <button
             onClick={() => setShowIngredients(true)}
-            className="text-[10px] text-amber-500 hover:text-amber-400 font-bold tracking-wide flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-full transition-colors border border-amber-500/20"
+            className="text-[10px] text-amber-500 hover:text-amber-400 font-bold tracking-wide flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-full transition-colors border border-amber-500/20 cursor-pointer"
           >
             View Ingredients
           </button>
+
+          {item.has3dView && (
+            <Food3DButton onClick={() => setShow3D(true)} />
+          )}
         </div>
 
         {/* Real-time Reaction Details Grid (Expandable) */}
@@ -302,6 +309,12 @@ export default function FoodCard({ item }: FoodCardProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Food3DModal
+        item={item}
+        isOpen={show3D}
+        onClose={() => setShow3D(false)}
+      />
     </motion.div>
   );
 }
