@@ -9,6 +9,13 @@ import { motion } from "framer-motion";
 // Lazy load ModelViewer with SSR disabled to prevent Server-Side ThreeJS errors
 const ModelViewer = dynamic(() => import("./ModelViewer"), { ssr: false });
 
+const CUSTOM_3D_FALLBACKS: Record<string, string> = {
+  "start_01": "/images/3d/paneer-tikka-3d.png",
+  "main_01": "/images/3d/butter-chicken-3d.png",
+  "biry_01": "/images/3d/chicken-biryani-3d.png",
+  "dess_02": "/images/3d/sizzling-brownie-3d.png",
+};
+
 interface Food3DModalProps {
   item: MenuItem;
   isOpen: boolean;
@@ -38,6 +45,8 @@ export default function Food3DModal({ item, isOpen, onClose }: Food3DModalProps)
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+
+  const fallbackImg = CUSTOM_3D_FALLBACKS[item.id] || item.image || undefined;
 
   return (
     <div
@@ -78,7 +87,7 @@ export default function Food3DModal({ item, isOpen, onClose }: Food3DModalProps)
             <ModelViewer
               key={resetKey}
               url={item.model3dUrl}
-              fallbackImage={item.image || undefined}
+              fallbackImage={fallbackImg}
             />
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center select-none bg-neutral-950 rounded-2xl border border-white/5 m-4">
@@ -94,7 +103,7 @@ export default function Food3DModal({ item, isOpen, onClose }: Food3DModalProps)
           {/* User interaction HUD overlay */}
           <div className="absolute bottom-6 left-6 bg-black/75 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 pointer-events-none select-none text-[9px] text-neutral-400 font-semibold shadow-lg">
             <Move className="w-3.5 h-3.5 text-amber-500" />
-            <span>Orbit Active</span>
+            <span>Interactive Space</span>
           </div>
         </div>
 
@@ -106,7 +115,7 @@ export default function Food3DModal({ item, isOpen, onClose }: Food3DModalProps)
             className="text-[10px] text-neutral-300 hover:text-white font-bold flex items-center gap-1.5 bg-white/5 hover:bg-white/10 px-3 py-2 rounded-xl border border-white/5 hover:border-white/10 transition-all cursor-pointer active:scale-95"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            Reset Camera
+            Reset Position
           </button>
           <button
             onClick={onClose}

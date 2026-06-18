@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Component, ErrorInfo, ReactNode, Suspense } from "react";
+import React, { Component, ErrorInfo, ReactNode, Suspense, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Center } from "@react-three/drei";
 import { Layers, Utensils } from "lucide-react";
@@ -38,33 +38,75 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
 function Model({ url }: { url: string }) {
   const { scene } = useGLTF(url);
-  // Center and scale scene automatically
   return <primitive object={scene} scale={1.8} />;
 }
 
-export default function ModelViewer({ url, fallbackImage }: { url: string; fallbackImage?: string }) {
-  const fallbackUI = (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-950/80 backdrop-blur-sm p-6 text-center select-none z-10">
+// 3D Simulated Hologram Fallback Component
+function Fallback3DViewer({ fallbackImage }: { fallbackImage?: string }) {
+  const [rotate, setRotate] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsDragging(true);
+    setStartPos({ x: e.clientX - rotate.y, y: e.clientY - rotate.x });
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const newY = e.clientX - startPos.x;
+    const newX = e.clientY - startPos.y;
+    // Limit rotation tilt angle
+    setRotate({
+      x: Math.max(-30, Math.min(30, newX)),
+      y: Math.max(-60, Math.min(60, newY))
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    setIsDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-950 p-6 text-center select-none z-10 rounded-2xl">
       {fallbackImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={fallbackImage}
-          alt="Fallback dish preview"
-          className="w-36 h-36 object-cover rounded-2xl border border-white/10 shadow-[0_0_20px_rgba(239,68,68,0.1)] mb-4 opacity-75"
-        />
+        <div 
+          className="relative w-48 h-48 cursor-grab active:cursor-grabbing preserve-3d touch-none mb-4 flex items-center justify-center"
+          style={{
+            transform: `perspective(800px) rotateX(${-rotate.x}deg) rotateY(${rotate.y}deg)`,
+            transition: isDragging ? "none" : "transform 0.5s ease-out"
+          }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={fallbackImage}
+            alt="3D Hologram Fallback"
+            className="w-full h-full object-contain rounded-2xl drop-shadow-[0_15px_30px_rgba(245,158,11,0.2)] border border-white/10 bg-neutral-900/30"
+            draggable={false}
+          />
+        </div>
       ) : (
         <div className="w-36 h-36 bg-neutral-900 rounded-2xl flex items-center justify-center border border-white/5 mb-4 shadow-lg shadow-black/50">
           <Layers className="w-10 h-10 text-neutral-600 animate-pulse" />
         </div>
       )}
-      <span className="text-red-400 font-black uppercase tracking-widest text-[10px] bg-red-950/20 px-3 py-1.5 rounded-full border border-red-500/20 shadow-lg shadow-red-950/20">
-        3D preview unavailable
+      <span className="text-amber-500 font-black uppercase tracking-widest text-[9px] bg-amber-500/10 px-3 py-1.5 rounded-full border border-amber-500/20 shadow-lg shadow-amber-950/20">
+        3D preview fallback
       </span>
-      <p className="text-[10px] text-neutral-500 mt-2 font-medium">
-        The 3D model could not be loaded or processed.
+      <p className="text-[10px] text-neutral-400 mt-2 font-medium">
+        Drag image to rotate dish in simulated 3D space
       </p>
     </div>
   );
+}
+
+export default function ModelViewer({ url, fallbackImage }: { url: string; fallbackImage?: string }) {
+  const fallbackUI = <Fallback3DViewer fallbackImage={fallbackImage} />;
 
   return (
     <div className="relative w-full h-full bg-neutral-950 rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
