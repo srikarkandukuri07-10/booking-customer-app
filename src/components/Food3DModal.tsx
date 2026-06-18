@@ -9,59 +9,6 @@ import { motion } from "framer-motion";
 // Lazy load ModelViewer with SSR disabled to prevent Server-Side ThreeJS errors
 const ModelViewer = dynamic(() => import("./ModelViewer"), { ssr: false });
 
-const CUSTOM_3D_FALLBACKS: Record<string, string> = {
-  "start_01": "/images/3d/paneer-tikka-3d.png",
-  "start_02": "/images/3d/chicken-65-3d.png",
-  "start_03": "/images/3d/crispy-corn-3d.png",
-  "main_01": "/images/3d/butter-chicken-3d.png",
-  "main_02": "/images/3d/kadai-paneer-3d.png",
-  "main_03": "/images/3d/dal-makhani-3d.png",
-  "biry_01": "/images/3d/chicken-biryani-3d.png",
-  "biry_02": "/images/3d/paneer-biryani-3d.png",
-  "dess_01": "/images/3d/gulab-jamun-3d.png",
-  "dess_02": "/images/3d/sizzling-brownie-3d.png",
-  "drin_01": "/images/3d/masala-shikanji-3d.png",
-  "drin_02": "/images/3d/virgin-mojito-3d.png",
-  "drin_03": "/images/3d/mango-lassi-3d.png",
-};
-
-// Helper function to resolve fallback image by ID or normalized name
-const getFallbackImage = (item: MenuItem): string | undefined => {
-  // 1. Try matching by ID
-  if (CUSTOM_3D_FALLBACKS[item.id]) {
-    return CUSTOM_3D_FALLBACKS[item.id];
-  }
-
-  // 2. Try matching by normalized name
-  if (item.name) {
-    const normalized = item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    
-    // Map of name keywords to their corresponding 3D image file basenames
-    const matchedFile = [
-      "butter-chicken",
-      "chicken-65",
-      "chicken-biryani",
-      "crispy-corn",
-      "dal-makhani",
-      "gulab-jamun",
-      "kadai-paneer",
-      "mango-lassi",
-      "masala-shikanji",
-      "paneer-biryani",
-      "paneer-tikka",
-      "sizzling-brownie",
-      "virgin-mojito"
-    ].find(name => normalized.includes(name));
-
-    if (matchedFile) {
-      return `/images/3d/${matchedFile}-3d.png`;
-    }
-  }
-
-  // 3. Default fallback to standard 2D image
-  return item.image || undefined;
-};
-
 interface Food3DModalProps {
   item: MenuItem;
   isOpen: boolean;
@@ -92,8 +39,6 @@ export default function Food3DModal({ item, isOpen, onClose }: Food3DModalProps)
 
   if (!isOpen) return null;
 
-  const fallbackImg = getFallbackImage(item);
-
   return (
     <div
       role="dialog"
@@ -114,9 +59,11 @@ export default function Food3DModal({ item, isOpen, onClose }: Food3DModalProps)
             <h3 id="modal-title" className="text-sm font-bold text-amber-500 uppercase tracking-wider font-serif">
               3D preview: {item.name}
             </h3>
-            <p className="text-[10px] text-neutral-400 mt-0.5">
-              Drag to rotate, pinch to zoom, right-click/two-finger drag to pan
-            </p>
+            {item.model3dUrl && (
+              <p className="text-[10px] text-neutral-400 mt-0.5">
+                Drag to rotate, pinch to zoom, right-click/two-finger drag to pan
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -132,26 +79,31 @@ export default function Food3DModal({ item, isOpen, onClose }: Food3DModalProps)
           <ModelViewer
             key={resetKey}
             url={item.model3dUrl || ""}
-            fallbackImage={fallbackImg}
           />
 
           {/* User interaction HUD overlay */}
-          <div className="absolute bottom-6 left-6 bg-black/75 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 pointer-events-none select-none text-[9px] text-neutral-400 font-semibold shadow-lg">
-            <Move className="w-3.5 h-3.5 text-amber-500" />
-            <span>Interactive Space</span>
-          </div>
+          {item.model3dUrl && (
+            <div className="absolute bottom-6 left-6 bg-black/75 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 pointer-events-none select-none text-[9px] text-neutral-400 font-semibold shadow-lg">
+              <Move className="w-3.5 h-3.5 text-amber-500" />
+              <span>Interactive Space</span>
+            </div>
+          )}
         </div>
 
         {/* Footer controls container */}
         <div className="p-4 border-t border-white/5 flex items-center justify-between bg-black/40">
-          <button
-            onClick={() => setResetKey((prev) => prev + 1)}
-            aria-label="Reset 3D camera position"
-            className="text-[10px] text-neutral-300 hover:text-white font-bold flex items-center gap-1.5 bg-white/5 hover:bg-white/10 px-3 py-2 rounded-xl border border-white/5 hover:border-white/10 transition-all cursor-pointer active:scale-95"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Reset Position
-          </button>
+          {item.model3dUrl ? (
+            <button
+              onClick={() => setResetKey((prev) => prev + 1)}
+              aria-label="Reset 3D camera position"
+              className="text-[10px] text-neutral-300 hover:text-white font-bold flex items-center gap-1.5 bg-white/5 hover:bg-white/10 px-3 py-2 rounded-xl border border-white/5 hover:border-white/10 transition-all cursor-pointer active:scale-95"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Reset Position
+            </button>
+          ) : (
+            <div />
+          )}
           <button
             onClick={onClose}
             className="text-[10px] text-neutral-950 font-black uppercase tracking-wider bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-xl transition-all cursor-pointer active:scale-95 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
